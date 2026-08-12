@@ -7,6 +7,9 @@ Pi può consumare AI Work OS senza emulare Kilo:
 - estensione/subagent package quando serve delega automatica;
 - `models.json` per un router OpenAI-compatible.
 
+Il bootstrap installa le skill nella directory nativa isolata
+`~/.pi/agent/skills/` e i prompt in `~/.pi/agent/prompts/`.
+
 ## Modalità minima
 
 Creare nel profilo Pi un context file che dichiari il percorso di AI Work OS e imponga di leggere il contratto del ruolo scelto. Usare sessioni distinte per Wayfinder, Engineer e Reviewer; gli artefatti nel progetto costituiscono l'handoff.

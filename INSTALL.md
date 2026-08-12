@@ -26,8 +26,14 @@ powershell -ExecutionPolicy Bypass -File "$HOME\AI-Work-OS\install.ps1" -Client 
 ```
 
 Sostituire `kilo` con `opencode`, `pi`, `codex`, `claude` oppure `generic`.
+L'installer è PowerShell nativo e non richiede Python.
 La seconda riga puo essere rilanciata dopo un aggiornamento: i file differenti
 vengono salvati con un suffisso di backup prima della sostituzione.
+
+Il valore `-Client` è un confine di installazione: vengono scritti soltanto
+l'adapter e le skill del client selezionato. Gli altri client eventualmente
+rilevati sul computer vengono mostrati a titolo informativo e non vengono
+modificati.
 
 Per controllare senza installare:
 
@@ -49,18 +55,27 @@ il codice ispezionabile e mantiene esplicita la provenienza dell'installer.
    esegui il bootstrap e guidami nei soli passaggi manuali rimasti.
    ```
 
-Il client leggerà `AGENTS.md`, identificherà il proprio adapter e avvierà `scripts/bootstrap.py`.
+Il client leggerà `AGENTS.md`, identificherà il proprio adapter e avvierà
+l'installer nativo del sistema operativo.
 
 ## Cosa automatizza il bootstrap
 
 | Client | Installazione automatica |
 |---|---|
-| Kilo | sette agenti Markdown globali + skill AI Work OS + Wayfinder |
-| OpenCode | sette agenti Markdown globali + skill AI Work OS + Wayfinder |
-| Pi | skill AI Work OS + Wayfinder + sette prompt di ruolo |
+| Kilo | sette agenti Markdown globali + skill in `~/.kilo/skills/` |
+| OpenCode | sette agenti Markdown globali + skill in `~/.config/opencode/skills/` |
+| Pi | skill in `~/.pi/agent/skills/` + sette prompt di ruolo |
 | Codex | skill personali AI Work OS e Wayfinder |
 | Claude Code | skill personali AI Work OS e Wayfinder |
-| altro | skill Agent Skills standard AI Work OS e Wayfinder + report di porting |
+| altro | skill Agent Skills standard AI Work OS e Wayfinder + checklist di porting |
+
+In tutti i casi vengono creati anche `~/.ai-work-os/SETUP-REPORT.md` e
+`~/.ai-work-os/install.json`. Nessun file viene scritto nelle configurazioni
+degli altri client.
+
+La directory interoperabile `~/.agents/skills/` viene usata soltanto quando
+l'utente sceglie esplicitamente `generic`; gli adapter nativi usano directory
+specifiche del client per evitare che altri client scoprano le skill.
 
 Il bootstrap non installa provider, non inserisce credenziali e non effettua chiamate ai modelli.
 La copia Wayfinder installata conserva separatamente la licenza MIT originale;
@@ -79,21 +94,63 @@ Questi passaggi vengono elencati nel report locale con riferimenti ai file perti
 
 ## Uso manuale del bootstrap
 
+### Windows PowerShell
+
 Analisi senza modifiche:
 
-```text
-python scripts/bootstrap.py --client auto
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 -Client codex
 ```
 
-Installazione esplicita:
+Installazione:
 
-```text
-python scripts/bootstrap.py --client kilo --apply
-python scripts/bootstrap.py --client opencode --apply
-python scripts/bootstrap.py --client pi --apply
-python scripts/bootstrap.py --client codex --apply
-python scripts/bootstrap.py --client claude --apply
-python scripts/bootstrap.py --client generic --apply
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 -Client codex -Apply
 ```
+
+### macOS e Linux
+
+Analisi senza modifiche:
+
+```sh
+sh install.sh --client codex --dry-run
+```
+
+Installazione:
+
+```sh
+sh install.sh --client codex
+```
+
+Python non è richiesto né utilizzato. Il client deve essere sempre indicato
+esplicitamente: non esiste una modalità automatica che possa scegliere o
+installare l'adapter sbagliato.
+
+## Gestire l'installazione
+
+I comandi possono essere eseguiti da qualsiasi cartella nel terminale.
+
+Windows PowerShell:
+
+```powershell
+& "$HOME\.ai-work-os\manage.ps1" -Status
+& "$HOME\.ai-work-os\manage.ps1" -Doctor
+& "$HOME\.ai-work-os\manage.ps1" -Update -DryRun
+& "$HOME\.ai-work-os\manage.ps1" -Uninstall -DryRun
+```
+
+macOS/Linux:
+
+```sh
+sh "$HOME/.ai-work-os/manage.sh" status
+sh "$HOME/.ai-work-os/manage.sh" doctor
+sh "$HOME/.ai-work-os/manage.sh" update --dry-run
+sh "$HOME/.ai-work-os/manage.sh" uninstall --dry-run
+```
+
+`Status` fornisce il riepilogo, `Doctor` elenca file mancanti o modificati,
+`Update` reinstalla dalla copia locale corrente e `Uninstall` rimuove soltanto
+i file che corrispondono ancora agli hash installati. Togliere `-DryRun` o
+`--dry-run` soltanto dopo aver controllato il piano.
 
 Per destinazioni non standard usare gli installer specifici o seguire `adapters/generic/README.md`.

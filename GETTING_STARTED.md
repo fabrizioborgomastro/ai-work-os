@@ -19,9 +19,18 @@ Scegliere il percorso più adatto:
 - **Kilo** — adapter pronto in `adapters/kilo/`;
 - **OpenCode** — guida in `adapters/opencode/`;
 - **Pi** — guida in `adapters/pi/`;
+- **Codex** — skill portabili e guida ai limiti in `adapters/codex/`;
+- **Claude Code** — skill portabili e guida ai limiti in `adapters/claude/`;
 - **altro client** — usare `adapters/generic/` e i contratti in `core/agents/`.
 
 Un adapter deve preservare i contratti; può cambiare sintassi, nomi dei tool e modalità di delega.
+
+Kilo e OpenCode possono consumare direttamente gli agenti Markdown e i nomi
+logici delle combo. Codex e Claude Code supportano skill e subagenti, ma non
+replicano automaticamente una combo multi-provider con priorità, panel e
+giudice. In quei client il routing va implementato da un gateway compatibile o
+da un'orchestrazione esplicita, mantenendo manuale la configurazione di
+credenziali e privacy.
 
 ## 3. Collegare i modelli
 
@@ -40,7 +49,9 @@ Aprire nel client la cartella del repository su cui lavorare, non AI Work OS.
 
 ### Nuovo Business
 
-Selezionare `business-wayfinder` e descrivere liberamente il prodotto. L'agente:
+Selezionare `business-wayfinder` e descrivere liberamente il prodotto. Nei
+client che installano solo la skill, chiedere di attivare il ruolo
+`business-wayfinder`. L'agente:
 
 1. inizializza `PROJECT.md`;
 2. chiede Locale Markdown oppure GitHub Issues;
@@ -51,7 +62,8 @@ Passare quindi a `business-engineer`, che verifica autonomamente l'handoff prima
 
 ### Nuovo Light
 
-Selezionare `light-planner`; per attività già chiare e piccole è possibile iniziare direttamente con `light-builder`.
+Selezionare o attivare tramite la skill `light-planner`; per attività già
+chiare e piccole è possibile iniziare direttamente con `light-builder`.
 
 ## 5. Verifica dell'installazione
 
@@ -66,6 +78,8 @@ Prima di usare dati sensibili, controllare:
 
 Eseguire anche:
 
-```text
-python scripts/verify_distribution.py
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify_distribution.ps1
 ```
+
+Su macOS/Linux usare `sh scripts/verify_distribution.sh`.

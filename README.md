@@ -52,7 +52,7 @@ Condividere l'intera cartella `AI-Work-OS`. Non contiene credenziali, database, 
 2. Scrivere: `Installa AI Work OS nel client corrente seguendo AGENTS.md`.
 3. Seguire i soli passaggi manuali indicati nel report generato.
 4. Aprire la cartella del progetto reale nel client.
-5. Per un nuovo Business avviare `business-wayfinder`; per un nuovo Light avviare `light-planner`.
+5. Per un nuovo Business avviare o attivare tramite la skill `business-wayfinder`; per un nuovo Light usare `light-planner`.
 
 Gli agenti inizializzano automaticamente `PROJECT.md`, chiedono il tracker e preparano gli handoff. L'utente deve descrivere l'obiettivo, non ricordare prompt di bootstrap.
 

@@ -6,6 +6,8 @@ Gli adapter traducono AI Work OS verso un prodotto specifico; non fanno parte de
 - `kilo/` — installazione e mapping Kilo;
 - `opencode/` — installazione e mapping OpenCode;
 - `pi/` — uso tramite context file, prompt/skill o package Pi;
+- `codex/` — skill, subagenti e limiti del routing nativo Codex;
+- `claude/` — skill, subagenti e limiti del routing nativo Claude Code;
 - `omniroute/` — implementazione delle quattro route con OmniRoute;
 - `generic/` — schema per qualsiasi altro client o router.
 

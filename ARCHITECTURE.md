@@ -2,7 +2,7 @@
 
 ## Separazione tra processo, agenti e routing
 
-Il sistema ha tre livelli:
+Il sistema ha quattro livelli:
 
 1. **Core portabile** — contratti, gate, budget, evidence package e stato del progetto. Non contiene sintassi Kilo o OmniRoute.
 2. **Agenti** — ruoli distinti per pianificazione, implementazione e review. Ogni ruolo ha un contratto di input/output verificabile.
