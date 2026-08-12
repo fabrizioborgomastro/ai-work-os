@@ -56,6 +56,13 @@ Condividere l'intera cartella `AI-Work-OS`. Non contiene credenziali, database, 
 
 Gli agenti inizializzano automaticamente `PROJECT.md`, chiedono il tracker e preparano gli handoff. L'utente deve descrivere l'obiettivo, non ricordare prompt di bootstrap.
 
+Prima di scrivere file, l'installer distingue l'host/editor dal runtime target e
+mostra il livello di compatibilita. Per esempio Cursor con Claude Code attivo
+installa soltanto nelle skill di Claude: Cursor rimane l'host e non riceve file.
+Le integrazioni `skill-only` non includono il sistema di combo multiprovider e
+richiedono un'accettazione esplicita. I client sconosciuti vengono analizzati,
+non convertiti silenziosamente nell'adapter generico.
+
 Procedura completa e alternativa manuale: [INSTALL.md](INSTALL.md) e [GETTING_STARTED.md](GETTING_STARTED.md).
 
 ## Scelta del profilo
@@ -67,5 +74,6 @@ Procedura completa e alternativa manuale: [INSTALL.md](INSTALL.md) e [GETTING_ST
 | Dubbio sulla sensibilità | Business |
 
 Architettura e motivazioni: [ARCHITECTURE.md](ARCHITECTURE.md). Porting verso altri client: [core/PORTABILITY.md](core/PORTABILITY.md).
+Contratto e livelli di compatibilita: [core/COMPATIBILITY.md](core/COMPATIBILITY.md).
 
 Implementazioni future e relativi criteri di completamento: [ROADMAP.md](ROADMAP.md).

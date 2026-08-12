@@ -21,7 +21,9 @@ Scegliere il percorso più adatto:
 - **Pi** — guida in `adapters/pi/`;
 - **Codex** — skill portabili e guida ai limiti in `adapters/codex/`;
 - **Claude Code** — skill portabili e guida ai limiti in `adapters/claude/`;
-- **altro client** — usare `adapters/generic/` e i contratti in `core/agents/`.
+- **altro client** — eseguire prima l'audit di compatibilita; usare
+  `adapters/generic/` e i contratti in `core/agents/` solo dopo avere verificato
+  destinazione skill e capacita effettive.
 
 Un adapter deve preservare i contratti; può cambiare sintassi, nomi dei tool e modalità di delega.
 

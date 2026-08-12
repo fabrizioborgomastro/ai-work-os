@@ -1,42 +1,35 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("kilo", "opencode", "pi", "codex", "claude", "generic")]
-    [string]$Client,
-
-    [switch]$DryRun
+    [Alias("Client")][string]$Target,
+    [Alias("Host")][string]$HostApp = "auto",
+    [string]$SkillPath,
+    [ValidateSet("unknown", "native", "adapted", "skill-only", "unsupported")]
+    [string]$WorkflowCapability = "unknown",
+    [ValidateSet("unknown", "native-combo", "external-manual", "unsupported")]
+    [string]$RoutingCapability = "unknown",
+    [Alias("DryRun")][switch]$Analyze,
+    [switch]$AcceptLimitedCompatibility,
+    [switch]$AcceptUnverified
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $bootstrap = Join-Path $root "scripts\bootstrap.ps1"
+if (-not (Test-Path -LiteralPath $bootstrap -PathType Leaf)) { throw "Bootstrap not found: $bootstrap" }
 
-if (-not (Test-Path -LiteralPath $bootstrap -PathType Leaf)) {
-    throw "Bootstrap not found: $bootstrap"
-}
-
-if (-not $Client) {
-    Write-Host "Specify the agentic client to install:" -ForegroundColor Cyan
-    Write-Host "  kilo | opencode | pi | codex | claude | generic"
-    Write-Host ""
-    Write-Host "Example: powershell -ExecutionPolicy Bypass -File .\install.ps1 -Client kilo"
-    exit 2
-}
+$arguments = @{ HostApp = $HostApp; WorkflowCapability = $WorkflowCapability; RoutingCapability = $RoutingCapability }
+if ($Target) { $arguments.Target = $Target }
+if ($SkillPath) { $arguments.SkillPath = $SkillPath }
+if (-not $Analyze) { $arguments.Apply = $true }
+if ($AcceptLimitedCompatibility) { $arguments.AcceptLimitedCompatibility = $true }
+if ($AcceptUnverified) { $arguments.AcceptUnverified = $true }
 
 Write-Host "AI Work OS root: $root"
-Write-Host "Selected client: $Client"
 Write-Host "Installer engine: PowerShell (Python is not required)"
-if ($DryRun) {
-    Write-Host "Mode: dry run (no files will be changed)"
-} else {
-    Write-Host "Mode: install"
-}
+Write-Host $(if ($Analyze) { "Mode: compatibility analysis (no files will be changed)" } else { "Mode: install after compatibility preflight" })
+& $bootstrap @arguments
 
-if ($DryRun) {
-    & $bootstrap -Client $Client
-} else {
-    & $bootstrap -Client $Client -Apply
-}
-if (-not $DryRun) {
+if (-not $Analyze) {
     $report = Join-Path $HOME ".ai-work-os\SETUP-REPORT.md"
     Write-Host ""
     Write-Host "Installation complete." -ForegroundColor Green

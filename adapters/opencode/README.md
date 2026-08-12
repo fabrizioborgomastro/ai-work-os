@@ -5,7 +5,7 @@ OpenCode supporta agenti Markdown globali o di progetto. AI Work OS raccomanda l
 Eseguire dalla root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File install.ps1 -Client opencode
+powershell -ExecutionPolicy Bypass -File install.ps1 -Target opencode
 ```
 
 Lo script genera i sette agenti nella directory globale OpenCode a partire dall'adapter Markdown verificato. Dopo l'installazione, adeguare soltanto gli identificatori dei modelli/provider alle quattro route di `core/ROUTING.md`.

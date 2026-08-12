@@ -9,11 +9,12 @@ $required = @(
     "third_party/mattpocock-wayfinder/SKILL.md", "third_party/mattpocock-wayfinder/LICENSE",
     "third_party/mattpocock-wayfinder/README.md", "core/WORKFLOW.md", "core/TRACKERS.md",
     "core/ROUTING.md", "core/GATES.md", "core/BUDGETS.md", "core/PORTABILITY.md",
+    "core/COMPATIBILITY.md", "adapters/compatibility.tsv",
     "templates/PROJECT.example.md", "templates/EVIDENCE_PACKAGE.md", "adapters/README.md",
     "adapters/codex/README.md", "adapters/claude/README.md", "adapters/omniroute/combos.json",
     "skills/ai-work-os/SKILL.md", "scripts/bootstrap.ps1", "scripts/bootstrap.sh",
     "scripts/manage.ps1", "scripts/manage.sh", "scripts/verify_distribution.ps1",
-    "scripts/verify_distribution.sh"
+    "scripts/verify_distribution.sh", "scripts/test_compatibility.ps1", "scripts/test_compatibility.sh"
 )
 $expectedAgents = @(
     "business-wayfinder", "business-engineer", "business-architect", "business-reviewer",
@@ -42,6 +43,17 @@ $routing = Get-Content -LiteralPath (Join-Path $distributionRoot "adapters\omnir
 $routes = @($routing.combos.PSObject.Properties.Name | Sort-Object)
 $expectedRoutes = @("business-engineering", "business-review", "light-engineering", "light-review") | Sort-Object
 if (($routes -join "|") -ne ($expectedRoutes -join "|")) { $errors.Add("routing manifest does not contain exactly the four canonical routes") }
+
+$compatibility = @(Import-Csv -LiteralPath (Join-Path $distributionRoot "adapters\compatibility.tsv") -Delimiter "|")
+$knownRuntimes = @($compatibility | Where-Object { $_.kind -eq "runtime" -and $_.id -ne "generic" } | ForEach-Object id | Sort-Object)
+if (($knownRuntimes -join "|") -ne ((@("claude", "codex", "kilo", "opencode", "pi") | Sort-Object) -join "|")) {
+    $errors.Add("compatibility catalog runtime set mismatch")
+}
+foreach ($row in $compatibility | Where-Object { $_.kind -eq "runtime" -and $_.id -ne "generic" }) {
+    if (-not $row.workflowLevel -or -not $row.routingLevel -or -not $row.verifiedAt -or -not $row.evidence) {
+        $errors.Add("incomplete verified compatibility row: $($row.id)")
+    }
+}
 
 $wayfinder = Join-Path $distributionRoot "third_party\mattpocock-wayfinder\SKILL.md"
 if (Test-Path -LiteralPath $wayfinder -PathType Leaf) {

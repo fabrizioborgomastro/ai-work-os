@@ -17,6 +17,13 @@ json_value() { sed -n 's/^[[:space:]]*"'"$1"'": "\(.*\)",\{0,1\}$/\1/p' "$manife
 client=$(json_value client)
 root=$(json_value root)
 revision=$(json_value sourceRevision)
+host=$(json_value host)
+target=$(json_value target)
+adapter=$(json_value adapter)
+workflow=$(json_value workflowCompatibility)
+routing=$(json_value routingCompatibility)
+verified=$(json_value compatibilityVerified)
+skill_path=$(json_value skillPath)
 
 hash_file() {
     if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}';
@@ -48,6 +55,17 @@ show_status() {
     if [ "$root_state" = present ] && [ "$modified" -eq 0 ] && [ "$missing" -eq 0 ]; then echo "State: OK"; return 0; fi
     echo "State: ACTION REQUIRED"
     return 1
+}
+
+show_compatibility() {
+    [ -n "$target" ] || { echo "Compatibility data unavailable: update or reinstall AI Work OS."; return; }
+    echo "Host/editor: $host (informational only)"
+    echo "Target runtime: $target"
+    echo "Adapter: $adapter"
+    echo "Workflow compatibility: $workflow"
+    echo "Routing compatibility: $routing"
+    echo "Catalog verified: $verified"
+    echo "Report: $state/SETUP-REPORT.md"
 }
 
 uninstall_files() {
@@ -92,10 +110,17 @@ uninstall_files() {
 
 case "$command_name" in
     status) show_status 0 ;;
+    compatibility) show_compatibility ;;
     doctor) show_status 1 ;;
     update)
         [ -f "$root/install.sh" ] || { echo "Source installer not found: $root/install.sh" >&2; exit 1; }
-        if [ "$dry_run" -eq 1 ]; then sh "$root/install.sh" --client "$client" --dry-run; else sh "$root/install.sh" --client "$client"; fi ;;
+        set -- --target "$client" --host "${host:-auto}"
+        if [ -n "$skill_path" ]; then set -- "$@" --skill-path "$skill_path" --workflow-capability "${workflow:-unknown}" --routing-capability "${routing:-unknown}" --accept-unverified
+        elif [ -n "$workflow" ] && [ "$workflow" != native ]; then set -- "$@" --accept-limited-compatibility
+        elif [ -z "$workflow" ] && { [ "$client" = pi ] || [ "$client" = codex ] || [ "$client" = claude ]; }; then set -- "$@" --accept-limited-compatibility
+        fi
+        if [ "$dry_run" -eq 1 ]; then set -- "$@" --analyze; fi
+        sh "$root/install.sh" "$@" ;;
     uninstall) uninstall_files ;;
-    *) echo "Usage: $0 status|doctor|update|uninstall [--dry-run]" >&2; exit 2 ;;
+    *) echo "Usage: $0 status|compatibility|doctor|update|uninstall [--dry-run]" >&2; exit 2 ;;
 esac

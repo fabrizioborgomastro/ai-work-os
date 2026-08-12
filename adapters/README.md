@@ -11,6 +11,10 @@ Gli adapter traducono AI Work OS verso un prodotto specifico; non fanno parte de
 - `omniroute/` — implementazione delle quattro route con OmniRoute;
 - `generic/` — schema per qualsiasi altro client o router.
 
+`compatibility.tsv` e il catalogo machine-readable usato dai due installer. Un
+client assente dal catalogo riceve un audit minimo e non viene installato nella
+directory generica per supposizione.
+
 Un collega installa soltanto gli adapter che usa. Non modificare un adapter per cambiare il processo: aggiornare prima `core/`, quindi riallineare gli adapter interessati.
 
 ## Tracker e integrazioni esterne

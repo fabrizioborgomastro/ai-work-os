@@ -19,11 +19,13 @@ core/ROUTING.md
 core/GATES.md
 core/BUDGETS.md
 core/PORTABILITY.md
+core/COMPATIBILITY.md
 templates/PROJECT.example.md
 templates/EVIDENCE_PACKAGE.md
 adapters/README.md
 adapters/codex/README.md
 adapters/claude/README.md
+adapters/compatibility.tsv
 adapters/omniroute/combos.json
 skills/ai-work-os/SKILL.md
 scripts/bootstrap.ps1
@@ -31,7 +33,9 @@ scripts/bootstrap.sh
 scripts/manage.ps1
 scripts/manage.sh
 scripts/verify_distribution.ps1
-scripts/verify_distribution.sh'
+scripts/verify_distribution.sh
+scripts/test_compatibility.ps1
+scripts/test_compatibility.sh'
 
 printf '%s\n' "$required" | while IFS= read -r relative; do
     [ -f "$root/$relative" ] || { echo "missing: $relative" >&2; exit 1; }

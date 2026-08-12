@@ -2,6 +2,7 @@
 param(
     [Parameter(ParameterSetName = "Doctor")][switch]$Doctor,
     [Parameter(ParameterSetName = "Status")][switch]$Status,
+    [Parameter(ParameterSetName = "Compatibility")][switch]$Compatibility,
     [Parameter(ParameterSetName = "Update")][switch]$Update,
     [Parameter(ParameterSetName = "Uninstall")][switch]$Uninstall,
     [switch]$DryRun
@@ -16,7 +17,7 @@ function Read-Installation {
         throw "AI Work OS installation manifest not found: $manifestPath"
     }
     $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json
-    if ($manifest.schemaVersion -ne 1) {
+    if ($manifest.schemaVersion -notin @(1, 2)) {
         throw "Unsupported installation manifest schema: $($manifest.schemaVersion)"
     }
     if (-not (Test-Path -LiteralPath $manifest.ledger -PathType Leaf)) {
@@ -24,6 +25,22 @@ function Read-Installation {
     }
     $files = @(Import-Csv -LiteralPath $manifest.ledger -Delimiter "|")
     return @{ Manifest = $manifest; Files = $files }
+}
+
+function Show-Compatibility {
+    $installation = Read-Installation
+    $manifest = $installation.Manifest
+    if ($manifest.schemaVersion -lt 2) {
+        Write-Host "Compatibility data unavailable: reinstall or update AI Work OS to migrate the manifest." -ForegroundColor Yellow
+        return
+    }
+    Write-Host "Host/editor: $($manifest.host) (informational only)"
+    Write-Host "Target runtime: $($manifest.target)"
+    Write-Host "Adapter: $($manifest.adapter)"
+    Write-Host "Workflow compatibility: $($manifest.workflowCompatibility)"
+    Write-Host "Routing compatibility: $($manifest.routingCompatibility)"
+    Write-Host "Catalog verified: $($manifest.compatibilityVerified)"
+    Write-Host "Report: $($manifest.report)"
 }
 
 function Get-FileState($Entry) {
@@ -121,14 +138,22 @@ function Invoke-Update {
     if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
         throw "Source installer not found. Restore or re-clone the distribution at: $($installation.Manifest.root)"
     }
-    if ($DryRun) {
-        & $installer -Client $installation.Manifest.client -DryRun
-    } else {
-        & $installer -Client $installation.Manifest.client
+    $arguments = @{ Target = $installation.Manifest.client; HostApp = $(if ($installation.Manifest.host) { $installation.Manifest.host } else { "auto" }) }
+    if ($installation.Manifest.skillPath) { $arguments.SkillPath = $installation.Manifest.skillPath }
+    if ($installation.Manifest.schemaVersion -ge 2 -and -not $installation.Manifest.compatibilityVerified) {
+        $arguments.AcceptUnverified = $true
+        $arguments.WorkflowCapability = $installation.Manifest.workflowCompatibility
+        $arguments.RoutingCapability = $installation.Manifest.routingCompatibility
+    } elseif (($installation.Manifest.schemaVersion -ge 2 -and $installation.Manifest.workflowCompatibility -ne "native") -or
+              ($installation.Manifest.schemaVersion -eq 1 -and $installation.Manifest.client -in @("pi", "codex", "claude"))) {
+        $arguments.AcceptLimitedCompatibility = $true
     }
+    if ($DryRun) { $arguments.Analyze = $true }
+    & $installer @arguments
 }
 
 if ($Doctor) { [void](Show-Status $true); return }
+if ($Compatibility) { Show-Compatibility; return }
 if ($Update) { Invoke-Update; return }
 if ($Uninstall) { Invoke-Uninstall; return }
 [void](Show-Status $false)

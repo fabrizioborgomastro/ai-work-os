@@ -22,15 +22,17 @@ attivare servizi a pagamento senza il mio consenso.
 
 ```powershell
 git clone https://github.com/fabrizioborgomastro/ai-work-os.git "$HOME\AI-Work-OS"
-powershell -ExecutionPolicy Bypass -File "$HOME\AI-Work-OS\install.ps1" -Client kilo
+powershell -ExecutionPolicy Bypass -File "$HOME\AI-Work-OS\install.ps1" -Target kilo
 ```
 
-Sostituire `kilo` con `opencode`, `pi`, `codex`, `claude` oppure `generic`.
+`-Client` resta un alias compatibile, ma il nome corrente e `-Target` perche
+indica il runtime che ricevera i file. Sostituire `kilo` con `opencode`, `pi`,
+`codex` o `claude`.
 L'installer è PowerShell nativo e non richiede Python.
 La seconda riga puo essere rilanciata dopo un aggiornamento: i file differenti
 vengono salvati con un suffisso di backup prima della sostituzione.
 
-Il valore `-Client` è un confine di installazione: vengono scritti soltanto
+Il valore `-Target` è un confine di installazione: vengono scritti soltanto
 l'adapter e le skill del client selezionato. Gli altri client eventualmente
 rilevati sul computer vengono mostrati a titolo informativo e non vengono
 modificati.
@@ -38,7 +40,7 @@ modificati.
 Per controllare senza installare:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "$HOME\AI-Work-OS\install.ps1" -Client kilo -DryRun
+powershell -ExecutionPolicy Bypass -File "$HOME\AI-Work-OS\install.ps1" -Target kilo -Analyze
 ```
 
 Non consigliamo `irm ... | iex`: scaricare o clonare prima la repository rende
@@ -67,15 +69,49 @@ l'installer nativo del sistema operativo.
 | Pi | skill in `~/.pi/agent/skills/` + sette prompt di ruolo |
 | Codex | skill personali AI Work OS e Wayfinder |
 | Claude Code | skill personali AI Work OS e Wayfinder |
-| altro | skill Agent Skills standard AI Work OS e Wayfinder + checklist di porting |
+| altro | audit minimo; installazione bloccata finche non viene indicato un percorso skill esplicito |
 
 In tutti i casi vengono creati anche `~/.ai-work-os/SETUP-REPORT.md` e
 `~/.ai-work-os/install.json`. Nessun file viene scritto nelle configurazioni
 degli altri client.
 
-La directory interoperabile `~/.agents/skills/` viene usata soltanto quando
-l'utente sceglie esplicitamente `generic`; gli adapter nativi usano directory
-specifiche del client per evitare che altri client scoprano le skill.
+Non esiste piu una destinazione `generic` implicita. Per un runtime non
+catalogato bisogna indicare esplicitamente la directory supportata dal client e
+accettare che la classificazione sia ancora non verificata.
+
+## Host, runtime e compatibilita
+
+L'editor non e necessariamente il client che deve ricevere l'installazione:
+
+```text
+host/editor -> runtime target -> adapter -> routing
+Cursor      -> Claude Code    -> skill   -> esterno/manuale
+```
+
+Esempio di sola analisi:
+
+```powershell
+.\install.ps1 -Analyze -Host cursor -Target claude
+```
+
+Claude Code viene classificato `skill-only`: AI Work OS puo installare le skill,
+ma non puo riprodurre automaticamente le combo multiprovider. Dopo avere letto
+l'avviso, l'installazione richiede:
+
+```powershell
+.\install.ps1 -Host cursor -Target claude -AcceptLimitedCompatibility
+```
+
+Per un client non catalogato:
+
+```powershell
+.\install.ps1 -Analyze -Target nuovo-client
+.\install.ps1 -Target nuovo-client -SkillPath "C:\percorso\verificato\skills" `
+  -WorkflowCapability skill-only -RoutingCapability external-manual -AcceptUnverified
+```
+
+L'installer non consulta Internet. L'audit distingue fatti verificati, inferiti
+e sconosciuti; il catalogo locale si trova in `adapters/compatibility.tsv`.
 
 Il bootstrap non installa provider, non inserisce credenziali e non effettua chiamate ai modelli.
 La copia Wayfinder installata conserva separatamente la licenza MIT originale;
@@ -99,13 +135,13 @@ Questi passaggi vengono elencati nel report locale con riferimenti ai file perti
 Analisi senza modifiche:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 -Client codex
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 -Target codex
 ```
 
 Installazione:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 -Client codex -Apply
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 -Target codex -Apply -AcceptLimitedCompatibility
 ```
 
 ### macOS e Linux
@@ -113,18 +149,19 @@ powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 -Client codex -Ap
 Analisi senza modifiche:
 
 ```sh
-sh install.sh --client codex --dry-run
+sh install.sh --target codex --analyze
 ```
 
 Installazione:
 
 ```sh
-sh install.sh --client codex
+sh install.sh --target codex --accept-limited-compatibility
 ```
 
-Python non è richiesto né utilizzato. Il client deve essere sempre indicato
-esplicitamente: non esiste una modalità automatica che possa scegliere o
-installare l'adapter sbagliato.
+Python non è richiesto né utilizzato. Se il target non viene indicato,
+l'installer accetta soltanto `AI_WORK_OS_TARGET` oppure un unico runtime
+catalogato presente in `PATH`; in ogni situazione ambigua richiede `-Target` o
+`--target`. L'host non viene mai scelto come destinazione implicita.
 
 ## Gestire l'installazione
 
@@ -134,6 +171,7 @@ Windows PowerShell:
 
 ```powershell
 & "$HOME\.ai-work-os\manage.ps1" -Status
+& "$HOME\.ai-work-os\manage.ps1" -Compatibility
 & "$HOME\.ai-work-os\manage.ps1" -Doctor
 & "$HOME\.ai-work-os\manage.ps1" -Update -DryRun
 & "$HOME\.ai-work-os\manage.ps1" -Uninstall -DryRun
@@ -143,12 +181,14 @@ macOS/Linux:
 
 ```sh
 sh "$HOME/.ai-work-os/manage.sh" status
+sh "$HOME/.ai-work-os/manage.sh" compatibility
 sh "$HOME/.ai-work-os/manage.sh" doctor
 sh "$HOME/.ai-work-os/manage.sh" update --dry-run
 sh "$HOME/.ai-work-os/manage.sh" uninstall --dry-run
 ```
 
-`Status` fornisce il riepilogo, `Doctor` elenca file mancanti o modificati,
+`Status` fornisce il riepilogo, `Compatibility` ricorda host, target e limiti,
+`Doctor` elenca file mancanti o modificati,
 `Update` reinstalla dalla copia locale corrente e `Uninstall` rimuove soltanto
 i file che corrispondono ancora agli hash installati. Togliere `-DryRun` o
 `--dry-run` soltanto dopo aver controllato il piano.

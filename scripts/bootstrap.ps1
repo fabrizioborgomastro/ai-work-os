@@ -1,17 +1,27 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("auto", "kilo", "opencode", "pi", "codex", "claude", "generic")]
-    [string]$Client = "auto",
-
+    [Alias("Client")][string]$Target,
+    [Alias("Host")][string]$HostApp = "auto",
+    [string]$SkillPath,
+    [ValidateSet("unknown", "native", "adapted", "skill-only", "unsupported")]
+    [string]$WorkflowCapability = "unknown",
+    [ValidateSet("unknown", "native-combo", "external-manual", "unsupported")]
+    [string]$RoutingCapability = "unknown",
+    [switch]$AcceptLimitedCompatibility,
+    [switch]$AcceptUnverified,
     [switch]$Apply
 )
 
 $ErrorActionPreference = "Stop"
 $distributionRoot = Split-Path -Parent $PSScriptRoot
+$catalogPath = Join-Path $distributionRoot "adapters\compatibility.tsv"
+$catalog = @(Import-Csv -LiteralPath $catalogPath -Delimiter "|")
+$runtimeRows = @($catalog | Where-Object kind -eq "runtime")
 $stamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
 $managedFiles = [System.Collections.Generic.List[object]]::new()
 $previousManaged = @{}
 $previousManifestPath = Join-Path $HOME ".ai-work-os\install.json"
+
 if (Test-Path -LiteralPath $previousManifestPath -PathType Leaf) {
     try {
         $previousManifest = Get-Content -LiteralPath $previousManifestPath -Raw -Encoding utf8 | ConvertFrom-Json
@@ -24,79 +34,54 @@ if (Test-Path -LiteralPath $previousManifestPath -PathType Leaf) {
         throw "Existing AI Work OS installation state is unreadable. Run the installed manager with -Doctor before reinstalling. $($_.Exception.Message)"
     }
 }
-$roleNames = @(
-    "business-wayfinder",
-    "business-engineer",
-    "business-architect",
-    "business-reviewer",
-    "light-planner",
-    "light-builder",
-    "light-reviewer"
-)
-$routeNames = @(
-    "business-engineering",
-    "business-review",
-    "light-engineering",
-    "light-review"
-)
-$clientCommands = [ordered]@{
-    kilo = "kilo"
-    opencode = "opencode"
-    pi = "pi"
-    codex = "codex"
-    claude = "claude"
-}
 
-function Get-DetectedClients {
+$roleNames = @("business-wayfinder", "business-engineer", "business-architect", "business-reviewer", "light-planner", "light-builder", "light-reviewer")
+$routeNames = @("business-engineering", "business-review", "light-engineering", "light-review")
+
+function Get-DetectedRuntimes {
     $found = @()
-    foreach ($entry in $clientCommands.GetEnumerator()) {
-        if (Get-Command $entry.Value -ErrorAction SilentlyContinue) {
-            $found += $entry.Key
-        }
+    foreach ($row in $runtimeRows) {
+        if ($row.command -and (Get-Command $row.command -ErrorAction SilentlyContinue)) { $found += $row.id }
     }
-    return @($found)
+    return @($found | Select-Object -Unique)
 }
 
-function Resolve-SelectedClient([string]$Requested, [string[]]$Detected) {
-    if ($Requested -ne "auto") {
-        return $Requested
-    }
-    if ($Detected.Count -eq 1) {
-        return $Detected[0]
-    }
+function Resolve-Host([string]$Requested) {
+    if ($Requested -and $Requested -ne "auto") { return $Requested.ToLowerInvariant() }
+    if ($env:CURSOR_TRACE_ID -or $env:TERM_PROGRAM -eq "cursor") { return "cursor" }
+    if ($env:ANTIGRAVITY_HOME -or $env:ANTIGRAVITY_SESSION) { return "antigravity" }
+    if ($env:VSCODE_PID -or $env:TERM_PROGRAM -eq "vscode") { return "vscode" }
+    return "terminal"
+}
+
+function Resolve-Target([string]$Requested, [string[]]$Detected) {
+    if ($Requested) { return $Requested.ToLowerInvariant() }
+    if ($env:AI_WORK_OS_TARGET) { return $env:AI_WORK_OS_TARGET.ToLowerInvariant() }
+    if ($Detected.Count -eq 1) { return $Detected[0] }
     $detectedText = if ($Detected.Count) { $Detected -join ", " } else { "none" }
-    throw "Automatic client selection requires exactly one supported client on PATH; detected: $detectedText. Re-run with an explicit -Client."
+    throw "The target runtime is ambiguous; detected: $detectedText. Use -Target <runtime>. The host/editor is never used as an implicit target."
 }
 
-function Get-SkillBase([string]$SelectedClient) {
-    if ($SelectedClient -eq "kilo") {
-        return Join-Path $HOME ".kilo\skills"
+function Get-SkillBase([string]$SelectedTarget, $Compatibility) {
+    if (-not $Compatibility) { return [System.IO.Path]::GetFullPath($SkillPath) }
+    switch ($SelectedTarget) {
+        "kilo" { return Join-Path $HOME ".kilo\skills" }
+        "opencode" { return Join-Path $HOME ".config\opencode\skills" }
+        "pi" { return Join-Path $HOME ".pi\agent\skills" }
+        "codex" { return Join-Path $HOME ".codex\skills" }
+        "claude" { return Join-Path $HOME ".claude\skills" }
     }
-    if ($SelectedClient -eq "opencode") {
-        return Join-Path $HOME ".config\opencode\skills"
-    }
-    if ($SelectedClient -eq "pi") {
-        return Join-Path $HOME ".pi\agent\skills"
-    }
-    if ($SelectedClient -in @("codex", "claude")) {
-        return Join-Path $HOME ".$SelectedClient\skills"
-    }
-    return Join-Path $HOME ".agents\skills"
+    throw "No verified skill destination for target: $SelectedTarget"
 }
 
-function Get-ClientTargets([string]$SelectedClient) {
-    $skillBase = Get-SkillBase $SelectedClient
+function Get-ClientTargets([string]$SelectedTarget, $Compatibility) {
     $targets = @()
-    if ($SelectedClient -eq "kilo") {
-        $targets += Join-Path $HOME ".config\kilo\agents"
-    } elseif ($SelectedClient -eq "opencode") {
-        $targets += Join-Path $HOME ".config\opencode\agents"
-    }
+    if ($SelectedTarget -eq "kilo") { $targets += Join-Path $HOME ".config\kilo\agents" }
+    elseif ($SelectedTarget -eq "opencode") { $targets += Join-Path $HOME ".config\opencode\agents" }
+    $skillBase = Get-SkillBase $SelectedTarget $Compatibility
     $targets += Join-Path $skillBase "ai-work-os"
     $targets += Join-Path $skillBase "wayfinder"
-    if ($SelectedClient -eq "pi") {
-        $targets += Join-Path $HOME ".pi\agent\prompts"
-    }
+    if ($SelectedTarget -eq "pi") { $targets += Join-Path $HOME ".pi\agent\prompts" }
     $targets += Join-Path $HOME ".ai-work-os\manage.ps1"
     $targets += Join-Path $HOME ".ai-work-os\SETUP-REPORT.md"
     $targets += Join-Path $HOME ".ai-work-os\install.json"
@@ -106,17 +91,12 @@ function Get-ClientTargets([string]$SelectedClient) {
 
 function Write-Utf8NoBom([string]$Path, [string]$Content) {
     $parent = Split-Path -Parent $Path
-    if (-not (Test-Path -LiteralPath $parent -PathType Container)) {
-        New-Item -ItemType Directory -Path $parent -Force | Out-Null
-    }
-    $encoding = New-Object System.Text.UTF8Encoding($false)
-    [System.IO.File]::WriteAllText($Path, $Content, $encoding)
+    if (-not (Test-Path -LiteralPath $parent -PathType Container)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+    [System.IO.File]::WriteAllText($Path, $Content, (New-Object System.Text.UTF8Encoding($false)))
 }
 
 function Register-ManagedFile([string]$Path, [bool]$PreExisting, [string]$BackupPath) {
-    if ($Path.Contains("|") -or $Path.Contains("`n") -or $Path.Contains("`r")) {
-        throw "Managed paths cannot contain pipes or newlines: $Path"
-    }
+    if ($Path.Contains("|") -or $Path.Contains("`n") -or $Path.Contains("`r")) { throw "Managed paths cannot contain pipes or newlines: $Path" }
     $fullPath = [System.IO.Path]::GetFullPath($Path)
     $previous = $previousManaged[$fullPath.ToLowerInvariant()]
     if ($previous) {
@@ -134,218 +114,207 @@ function Register-ManagedFile([string]$Path, [bool]$PreExisting, [string]$Backup
 function Backup-AndWrite([string]$Path, [string]$Content, [switch]$Track) {
     $preExisting = Test-Path -LiteralPath $Path -PathType Leaf
     $backupPath = ""
-    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+    if ($preExisting) {
         $existing = [System.IO.File]::ReadAllText($Path)
-        if ($existing -ne $Content) {
-            $backupPath = "$Path.backup-$stamp"
-            Copy-Item -LiteralPath $Path -Destination $backupPath -Force
-        }
+        if ($existing -ne $Content) { $backupPath = "$Path.backup-$stamp"; Copy-Item -LiteralPath $Path -Destination $backupPath -Force }
     }
     Write-Utf8NoBom $Path $Content
-    if ($Track) {
-        Register-ManagedFile $Path $preExisting $backupPath
-    }
+    if ($Track) { Register-ManagedFile $Path $preExisting $backupPath }
 }
 
-function Install-Skills([string]$SelectedClient) {
-    $skillBase = Get-SkillBase $SelectedClient
+function Install-Skills([string]$SelectedTarget, $Compatibility) {
+    $skillBase = Get-SkillBase $SelectedTarget $Compatibility
     $portableRoot = $distributionRoot.Replace("\", "/")
-    $skillSource = Join-Path $distributionRoot "skills\ai-work-os\SKILL.md"
-    $skillContent = [System.IO.File]::ReadAllText($skillSource).Replace("{{AI_WORK_OS_HOME}}", $portableRoot)
+    $skillContent = [System.IO.File]::ReadAllText((Join-Path $distributionRoot "skills\ai-work-os\SKILL.md")).Replace("{{AI_WORK_OS_HOME}}", $portableRoot)
     Backup-AndWrite (Join-Path $skillBase "ai-work-os\SKILL.md") $skillContent -Track
-
     $wayfinderSource = Join-Path $distributionRoot "third_party\mattpocock-wayfinder"
     foreach ($name in @("SKILL.md", "LICENSE", "README.md")) {
-        $content = [System.IO.File]::ReadAllText((Join-Path $wayfinderSource $name))
-        Backup-AndWrite (Join-Path $skillBase "wayfinder\$name") $content -Track
+        Backup-AndWrite (Join-Path $skillBase "wayfinder\$name") ([System.IO.File]::ReadAllText((Join-Path $wayfinderSource $name))) -Track
     }
 }
 
-function Install-MarkdownAgents([string]$SelectedClient) {
-    if ($SelectedClient -eq "kilo") {
-        $target = Join-Path $HOME ".config\kilo\agents"
-    } else {
-        $target = Join-Path $HOME ".config\opencode\agents"
-    }
+function Install-MarkdownAgents([string]$SelectedTarget) {
+    $targetPath = if ($SelectedTarget -eq "kilo") { Join-Path $HOME ".config\kilo\agents" } else { Join-Path $HOME ".config\opencode\agents" }
     $source = Join-Path $distributionRoot "adapters\markdown-agents\agents"
     $portableRoot = $distributionRoot.Replace("\", "/")
     foreach ($file in Get-ChildItem -LiteralPath $source -Filter "*.md" -File | Sort-Object Name) {
-        $content = [System.IO.File]::ReadAllText($file.FullName)
-        $content = $content.Replace('`core/', ('`' + $portableRoot + '/core/'))
-        $content = $content.Replace('`templates/', ('`' + $portableRoot + '/templates/'))
-        Backup-AndWrite (Join-Path $target $file.Name) $content -Track
+        $content = [System.IO.File]::ReadAllText($file.FullName).Replace('`core/', ('`' + $portableRoot + '/core/')).Replace('`templates/', ('`' + $portableRoot + '/templates/'))
+        Backup-AndWrite (Join-Path $targetPath $file.Name) $content -Track
     }
 }
 
 function Install-PiPrompts {
-    $target = Join-Path $HOME ".pi\agent\prompts"
+    $targetPath = Join-Path $HOME ".pi\agent\prompts"
     $portableRoot = $distributionRoot.Replace("\", "/")
-    $policies = "WORKFLOW.md, TRACKERS.md, ROUTING.md, GATES.md and BUDGETS.md"
     foreach ($role in $roleNames) {
-        $content = @"
-Activate the AI Work OS ``$role`` role for the project in the current working directory.
-
-Read and follow ``$portableRoot/core/agents/$role.md`` and the shared policies under ``$portableRoot/core/`` ($policies). Treat ``$portableRoot`` as read-only. Persist all operational artifacts and handoffs in the actual project.
-"@
-        Backup-AndWrite (Join-Path $target "ai-$role.md") $content -Track
+        $content = "Activate the AI Work OS ``$role`` role for the project in the current working directory.`n`nRead and follow ``$portableRoot/core/agents/$role.md`` and the shared policies under ``$portableRoot/core/``. Treat ``$portableRoot`` as read-only. Persist all operational artifacts and handoffs in the actual project.`n"
+        Backup-AndWrite (Join-Path $targetPath "ai-$role.md") $content -Track
     }
 }
 
-function Get-ClientConfigText([string]$SelectedClient) {
-    $candidates = @()
-    if ($SelectedClient -eq "kilo") {
-        $candidates = @(Join-Path $HOME ".config\kilo\kilo.jsonc")
-    } elseif ($SelectedClient -eq "opencode") {
-        $candidates = @(
-            (Join-Path $HOME ".config\opencode\opencode.json"),
-            (Join-Path $HOME ".config\opencode\opencode.jsonc")
-        )
-    } elseif ($SelectedClient -eq "pi") {
-        $candidates = @(Join-Path $HOME ".pi\agent\models.json")
+function Get-ClientConfigText([string]$SelectedTarget) {
+    $candidates = switch ($SelectedTarget) {
+        "kilo" { @(Join-Path $HOME ".config\kilo\kilo.jsonc") }
+        "opencode" { @((Join-Path $HOME ".config\opencode\opencode.json"), (Join-Path $HOME ".config\opencode\opencode.jsonc")) }
+        "pi" { @(Join-Path $HOME ".pi\agent\models.json") }
+        default { @() }
     }
-    $chunks = @()
-    foreach ($path in $candidates) {
-        if (Test-Path -LiteralPath $path -PathType Leaf) {
-            $chunks += [System.IO.File]::ReadAllText($path)
-        }
-    }
-    return $chunks -join "`n"
+    return (@($candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | ForEach-Object { [System.IO.File]::ReadAllText($_) }) -join "`n")
 }
 
-function New-SetupReport([string]$SelectedClient, [string[]]$Detected, [bool]$Applied) {
-    $configText = Get-ClientConfigText $SelectedClient
-    $missingRoutes = @($routeNames | Where-Object { -not $configText.Contains($_) })
-    $status = if ($Applied) { "APPLIED" } else { "DRY RUN - no files changed" }
+function New-SetupReport([string]$SelectedTarget, [string]$SelectedHost, $Compatibility, [string[]]$Detected, [bool]$Verified) {
+    $workflow = if ($Compatibility) { $Compatibility.workflowLevel } else { $WorkflowCapability }
+    $routing = if ($Compatibility) { $Compatibility.routingLevel } else { $RoutingCapability }
+    $adapter = if ($Compatibility) { $Compatibility.adapter } else { "generic-explicit" }
+    $limitation = if ($Compatibility) { $Compatibility.limitation } else { "Capacita dichiarate dall'utente e non verificate dal catalogo." }
+    $recommendation = if ($Compatibility) { $Compatibility.recommendation } else { "Verificare la documentazione ufficiale del runtime prima dell'uso reale." }
+    $evidence = if ($Compatibility) { "$($Compatibility.evidence) (verificato $($Compatibility.verifiedAt))" } else { "UNKNOWN: runtime non presente nel catalogo locale" }
+    $targetsText = (Get-ClientTargets $SelectedTarget $Compatibility | ForEach-Object { "- ``$_``" }) -join "`n"
     $detectedText = if ($Detected.Count) { $Detected -join ", " } else { "none" }
-    $targetsText = (Get-ClientTargets $SelectedClient | ForEach-Object { "- ``$_``" }) -join "`n"
-    $missingText = if ($missingRoutes.Count) {
-        ($missingRoutes | ForEach-Object { "- ``$_``" }) -join "`n"
-    } else {
-        "- none detected"
-    }
+    $configText = Get-ClientConfigText $SelectedTarget
+    $missingRoutes = @($routeNames | Where-Object { -not $configText.Contains($_) })
+    $missingText = if ($missingRoutes.Count) { ($missingRoutes | ForEach-Object { "- ``$_``" }) -join "`n" } else { "- none detected" }
     return @"
 # AI Work OS setup report
 
-- Status: **$status**
-- Client selected: ``$SelectedClient``
-- Clients detected on PATH: $detectedText
-- Installation scope: only the selected client (``$SelectedClient``)
+- Status: **APPLIED**
+- Host/editor: ``$SelectedHost`` (informational; no files installed in the host)
+- Target runtime: ``$SelectedTarget``
+- Adapter: ``$adapter``
+- Workflow compatibility: **$workflow**
+- Routing compatibility: **$routing**
+- Catalog verification: **$Verified**
+- Runtimes detected on PATH: $detectedText
+- Installation scope: only ``$SelectedTarget``
 - Canonical core: ``$distributionRoot``
 
-## Installation targets
+## What was installed
 
 $targetsText
 
-## Route names not found in the inspected client configuration
+## What was not installed or configured
+
+- No files for other agentic clients or host editors.
+- No provider, credential, plugin, MCP, combo, fallback, privacy control or spending limit.
+- Limitation: $limitation
+- Recommendation: $recommendation
+- Evidence: $evidence
+
+## Route names not found in inspected runtime configuration
 
 $missingText
 
-This is a textual presence check, not proof that routes, providers, privacy policies or fallbacks work. Configure and verify all four routes according to ``$distributionRoot\core\ROUTING.md``. A route may live in an external router and therefore not appear in the client config.
-
-## Manual checklist
-
-1. Configure model/provider credentials using the client's secure credential flow.
-2. For Business, verify no free endpoints, ZDR/no-training, allowlist and spending cap.
-3. For Light, set the project spending cap and never provide sensitive material to free endpoints.
-4. Reload the selected client and confirm the installed roles or skills are visible.
-5. If GitHub Issues is selected later, approve an official integration and authentication method.
-6. Open a synthetic project and test planning -> handoff -> build without paid calls where possible.
+This textual check is not proof that routes or providers work. A route may live in an external router.
 
 ## Lifecycle commands
 
-Run these commands from any directory in PowerShell:
+- ``& \"$HOME\.ai-work-os\manage.ps1\" -Status``
+- ``& \"$HOME\.ai-work-os\manage.ps1\" -Compatibility``
+- ``& \"$HOME\.ai-work-os\manage.ps1\" -Doctor``
+- ``& \"$HOME\.ai-work-os\manage.ps1\" -Update -DryRun``
+- ``& \"$HOME\.ai-work-os\manage.ps1\" -Uninstall -DryRun``
 
-- ``& "$HOME\.ai-work-os\manage.ps1" -Status``
-- ``& "$HOME\.ai-work-os\manage.ps1" -Doctor``
-- ``& "$HOME\.ai-work-os\manage.ps1" -Update -DryRun``
-- ``& "$HOME\.ai-work-os\manage.ps1" -Uninstall -DryRun``
-
-## Client capability note
-
-- Kilo and OpenCode receive seven native Markdown agent definitions plus skills.
-- Pi receives seven role prompts plus skills.
-- Codex and Claude Code receive skills only; their native subagent and routing configuration is intentionally not changed without explicit approval.
-- Multi-provider combo behavior is router/client-specific and is never assumed from skill installation alone.
-
-## Bundled third-party component
-
-- Wayfinder by Matt Pocock, revision ``84fdeffd12f2ee307994d1eb6feb48173b6e0502``.
-- License: MIT; the copyright notice and license are installed beside the skill.
-- See ``$distributionRoot\THIRD_PARTY_NOTICES.md`` for provenance and attribution.
-
-## First use
-
-- Business: start with ``business-wayfinder`` unless decisions are already mature.
-- Light: start with ``light-planner`` unless the task is already small and fully specified.
+Configure credentials through the runtime's secure flow. Verify privacy, provider and budget policies before sending real project data.
 "@
 }
 
-$detectedClients = @(Get-DetectedClients)
-$selectedClient = Resolve-SelectedClient $Client $detectedClients
-$detectedDisplay = if ($detectedClients.Count) { $detectedClients -join ", " } else { "none" }
+$detectedRuntimes = @(Get-DetectedRuntimes)
+$selectedHost = Resolve-Host $HostApp
+$selectedTarget = Resolve-Target $Target $detectedRuntimes
+$compatibility = $runtimeRows | Where-Object id -eq $selectedTarget | Select-Object -First 1
+$verified = $null -ne $compatibility -and $selectedTarget -ne "generic"
 
-Write-Host "AI Work OS: $distributionRoot"
-Write-Host "Requested client: $Client"
-Write-Host "Detected clients: $detectedDisplay (informational only)"
-Write-Host "Selected adapter: $selectedClient"
-Write-Host "Installation scope: only $selectedClient"
-Write-Host "Planned targets:"
-foreach ($target in Get-ClientTargets $selectedClient) {
-    Write-Host "- $target"
-}
-
-if ($Apply) {
-    if ($selectedClient -in @("kilo", "opencode")) {
-        Install-MarkdownAgents $selectedClient
-        Install-Skills $selectedClient
-    } elseif ($selectedClient -eq "pi") {
-        Install-Skills $selectedClient
-        Install-PiPrompts
-    } else {
-        Install-Skills $selectedClient
-    }
-
-    $managerSource = Join-Path $distributionRoot "scripts\manage.ps1"
-    $managerTarget = Join-Path $HOME ".ai-work-os\manage.ps1"
-    Backup-AndWrite $managerTarget ([System.IO.File]::ReadAllText($managerSource)) -Track
-}
-
-$report = New-SetupReport $selectedClient $detectedClients $Apply.IsPresent
-if ($Apply) {
-    $reportPath = Join-Path $HOME ".ai-work-os\SETUP-REPORT.md"
-    Backup-AndWrite $reportPath $report -Track
-    $ledgerPath = Join-Path $HOME ".ai-work-os\managed-files.tsv"
-    $ledgerLines = [System.Collections.Generic.List[string]]::new()
-    $ledgerLines.Add("path|installedHash|preExisting|backupPath")
-    foreach ($file in $managedFiles) {
-        $ledgerLines.Add("$($file.path)|$($file.installedHash)|$([int]$file.preExisting)|$($file.backupPath)")
-    }
-    Write-Utf8NoBom $ledgerPath (($ledgerLines -join "`n") + "`n")
-    $revision = "unknown"
-    if (Get-Command git -ErrorAction SilentlyContinue) {
-        $candidate = (& git -C $distributionRoot rev-parse HEAD 2>$null)
-        if ($LASTEXITCODE -eq 0 -and $candidate) { $revision = $candidate.Trim() }
-    }
-    $metadata = [ordered]@{
-        schemaVersion = 1
-        installedAt = (Get-Date).ToUniversalTime().ToString("o")
-        client = $selectedClient
-        root = $distributionRoot
-        sourceRevision = $revision
-        report = $reportPath
-        ledger = $ledgerPath
-        installer = "powershell"
-        managedFileCount = $managedFiles.Count
-        thirdParty = [ordered]@{
-            wayfinder = [ordered]@{
-                revision = "84fdeffd12f2ee307994d1eb6feb48173b6e0502"
-                license = "MIT"
-            }
-        }
-    }
-    Write-Utf8NoBom (Join-Path $HOME ".ai-work-os\install.json") ($metadata | ConvertTo-Json -Depth 5)
-    Write-Host "Report: $reportPath"
+if ($compatibility -and $selectedTarget -ne "generic") {
+    $workflow = $compatibility.workflowLevel
+    $routing = $compatibility.routingLevel
+    $adapter = $compatibility.adapter
+    $limitation = $compatibility.limitation
+    $recommendation = $compatibility.recommendation
 } else {
-    Write-Host ""
-    Write-Host $report
+    $compatibility = $null
+    $workflow = $WorkflowCapability
+    $routing = $RoutingCapability
+    $adapter = "generic-explicit"
+    $limitation = "Runtime non catalogato: percorso e capacita non sono verificati automaticamente."
+    $recommendation = "Fornire -SkillPath e verificare la documentazione ufficiale del runtime."
 }
+
+Write-Host ""
+Write-Host "Compatibility preflight" -ForegroundColor Cyan
+Write-Host "Host/editor: $selectedHost (informational only)"
+Write-Host "Target runtime: $selectedTarget"
+Write-Host "Adapter: $adapter"
+Write-Host "Workflow compatibility: $workflow"
+Write-Host "Routing compatibility: $routing"
+Write-Host "Catalog status: $(if ($verified) { 'VERIFIED' } else { 'UNVERIFIED' })"
+Write-Host "Limitation: $limitation"
+Write-Host "Recommendation: $recommendation"
+
+if (-not $verified) {
+    $commandEvidence = if (Get-Command $selectedTarget -ErrorAction SilentlyContinue) { "VERIFIED: command found on PATH" } else { "UNKNOWN: command not found on PATH" }
+    $pathEvidence = if ($SkillPath) { "INFERRED: user supplied skill path $SkillPath" } else { "UNKNOWN: no skill destination supplied" }
+    Write-Host "Minimum audit:"
+    Write-Host "- Executable: $commandEvidence"
+    Write-Host "- Skill destination: $pathEvidence"
+    Write-Host "- Workflow claim: INFERRED ($WorkflowCapability)"
+    Write-Host "- Routing claim: INFERRED ($RoutingCapability)"
+}
+
+if ($Apply -and -not $verified) {
+    if (-not $SkillPath) { throw "Unverified target blocked: provide an explicit -SkillPath. No files were changed." }
+    if (-not $AcceptUnverified) { throw "Unverified target blocked: re-run with -AcceptUnverified after reviewing the audit. No files were changed." }
+    if ($WorkflowCapability -eq "unsupported") { throw "The declared workflow capability is unsupported. No files were changed." }
+}
+if ($Apply -and $verified -and $workflow -ne "native" -and -not $AcceptLimitedCompatibility) {
+    throw "Compatibility is $workflow. Re-run with -AcceptLimitedCompatibility after reviewing the limitations. No files were changed."
+}
+
+Write-Host "Planned targets:"
+if ($verified -or $SkillPath) {
+    foreach ($path in Get-ClientTargets $selectedTarget $compatibility) { Write-Host "- $path" }
+} else {
+    Write-Host "- BLOCKED until an explicit skill destination is supplied"
+}
+if (-not $Apply) { Write-Host "Analysis complete: no files changed."; return }
+
+if ($selectedTarget -in @("kilo", "opencode")) { Install-MarkdownAgents $selectedTarget }
+Install-Skills $selectedTarget $compatibility
+if ($selectedTarget -eq "pi") { Install-PiPrompts }
+
+$managerTarget = Join-Path $HOME ".ai-work-os\manage.ps1"
+Backup-AndWrite $managerTarget ([System.IO.File]::ReadAllText((Join-Path $distributionRoot "scripts\manage.ps1"))) -Track
+$reportPath = Join-Path $HOME ".ai-work-os\SETUP-REPORT.md"
+$report = New-SetupReport $selectedTarget $selectedHost $compatibility $detectedRuntimes $verified
+Backup-AndWrite $reportPath $report -Track
+
+$ledgerPath = Join-Path $HOME ".ai-work-os\managed-files.tsv"
+$ledgerLines = [System.Collections.Generic.List[string]]::new()
+$ledgerLines.Add("path|installedHash|preExisting|backupPath")
+foreach ($file in $managedFiles) { $ledgerLines.Add("$($file.path)|$($file.installedHash)|$([int]$file.preExisting)|$($file.backupPath)") }
+Write-Utf8NoBom $ledgerPath (($ledgerLines -join "`n") + "`n")
+
+$revision = "unknown"
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    $candidate = (& git -C $distributionRoot rev-parse HEAD 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $candidate) { $revision = $candidate.Trim() }
+}
+$metadata = [ordered]@{
+    schemaVersion = 2
+    installedAt = (Get-Date).ToUniversalTime().ToString("o")
+    client = $selectedTarget
+    target = $selectedTarget
+    host = $selectedHost
+    adapter = $adapter
+    workflowCompatibility = $workflow
+    routingCompatibility = $routing
+    compatibilityVerified = $verified
+    skillPath = if ($SkillPath) { [System.IO.Path]::GetFullPath($SkillPath) } else { "" }
+    root = $distributionRoot
+    sourceRevision = $revision
+    report = $reportPath
+    ledger = $ledgerPath
+    installer = "powershell"
+    managedFileCount = $managedFiles.Count
+}
+Write-Utf8NoBom (Join-Path $HOME ".ai-work-os\install.json") ($metadata | ConvertTo-Json -Depth 4)
+Write-Host "Report: $reportPath"

@@ -9,6 +9,12 @@ Il sistema ha quattro livelli:
 3. **Adapter** — traducono i contratti verso client, router e tracker specifici.
 4. **Routing** — quattro route logiche indipendenti dal router. Cambiare provider non cambia il processo.
 
+Host/editor e runtime sono due identita diverse. Cursor o Antigravity possono
+ospitare un terminale o un'estensione che esegue Claude, Kilo, OpenCode o altro:
+la destinazione di installazione e sempre il runtime target. I livelli del
+workflow e del routing sono valutati separatamente secondo
+[`core/COMPATIBILITY.md`](core/COMPATIBILITY.md).
+
 Questa separazione impedisce dipendenze da Kilo, OpenCode, Pi, OmniRoute o GitHub. Un altro ambiente deve tradurre i file in `core/agents/`, preservare permessi e handoff e mappare le route su modelli equivalenti.
 
 ## Wayfinder
