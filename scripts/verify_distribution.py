@@ -19,6 +19,7 @@ AGENTS = {
 }
 REQUIRED = {
     "README.md",
+    "ROADMAP.md",
     "AGENTS.md",
     "INSTALL.md",
     "install.ps1",

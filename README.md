@@ -67,3 +67,5 @@ Procedura completa e alternativa manuale: [INSTALL.md](INSTALL.md) e [GETTING_ST
 | Dubbio sulla sensibilità | Business |
 
 Architettura e motivazioni: [ARCHITECTURE.md](ARCHITECTURE.md). Porting verso altri client: [core/PORTABILITY.md](core/PORTABILITY.md).
+
+Implementazioni future e relativi criteri di completamento: [ROADMAP.md](ROADMAP.md).
