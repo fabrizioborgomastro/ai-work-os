@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 
@@ -21,6 +22,11 @@ REQUIRED = {
     "AGENTS.md",
     "INSTALL.md",
     "install.ps1",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "third_party/mattpocock-wayfinder/SKILL.md",
+    "third_party/mattpocock-wayfinder/LICENSE",
+    "third_party/mattpocock-wayfinder/README.md",
     "GETTING_STARTED.md",
     "ARCHITECTURE.md",
     "core/WORKFLOW.md",
@@ -38,6 +44,7 @@ REQUIRED = {
 }
 FORBIDDEN_ROOT = {"PROJECT.md", ".kilo", ".wayfinder", "node_modules", "__pycache__"}
 FORBIDDEN_TEXT = ("C:\\Users\\", "E:/Lavoro/", "E:\\Lavoro\\", "Struttura di lavoro")
+WAYFINDER_SHA256 = "d33e2141f7c8bbfd137fef0213cbec465820e4680e67da5d0f0815d6742d26c2"
 
 
 def main() -> int:
@@ -61,6 +68,16 @@ def main() -> int:
     expected_routes = {"business-engineering", "business-review", "light-engineering", "light-review"}
     if set(manifest.get("combos", {})) != expected_routes:
         errors.append("routing manifest does not contain exactly the four canonical routes")
+
+    wayfinder = ROOT / "third_party/mattpocock-wayfinder/SKILL.md"
+    if wayfinder.is_file() and hashlib.sha256(wayfinder.read_bytes()).hexdigest() != WAYFINDER_SHA256:
+        errors.append("vendored Wayfinder snapshot differs from the recorded upstream revision")
+
+    wayfinder_license = ROOT / "third_party/mattpocock-wayfinder/LICENSE"
+    if wayfinder_license.is_file():
+        license_text = wayfinder_license.read_text(encoding="utf-8")
+        if "Copyright (c) 2026 Matt Pocock" not in license_text or "MIT License" not in license_text:
+            errors.append("vendored Wayfinder MIT attribution is incomplete")
 
     for path in ROOT.rglob("*"):
         if path.resolve() == Path(__file__).resolve():

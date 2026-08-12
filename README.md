@@ -5,6 +5,23 @@ Per installare da una copia locale o da una repository GitHub, partire da
 
 Repository canonica: https://github.com/fabrizioborgomastro/ai-work-os
 
+## License and credits
+
+Original AI Work OS material is licensed under the Apache License 2.0. The
+bundled Wayfinder skill and the portions adapted from its workflow remain
+available under Matt Pocock's MIT License. See `LICENSE` and
+`THIRD_PARTY_NOTICES.md`.
+
+Copyright 2026 Fabrizio Borgomastro.
+
+The Business Wayfinder workflow is based on Matt Pocock's Wayfinder skill:
+https://github.com/mattpocock/skills/tree/main/skills/engineering/wayfinder
+
+AI Work OS is independent and is not affiliated with or endorsed by Matt
+Pocock, Kilo, OpenCode, Anthropic, OpenAI, OpenRouter or the model providers
+referenced by its routing examples. Product names may be trademarks of their
+respective owners.
+
 AI Work OS è un sistema operativo portabile per governare progetti software svolti con agenti AI. Non è un'applicazione e non sostituisce il client agentico: definisce ruoli, passaggi di consegne, tracker, gate di qualità, limiti di costo e contratti di routing che possono essere applicati in Kilo, OpenCode, Pi, Codex, Claude Code, Cursor o altri ambienti.
 
 Il sistema offre due profili:

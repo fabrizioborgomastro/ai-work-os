@@ -54,33 +54,40 @@ def resolve_client(requested: str) -> tuple[str, list[str]]:
 
 def client_targets(client: str) -> list[Path]:
     home = Path.home()
+    skill_base = home / (f".{client}/skills" if client in {"codex", "claude"} else ".agents/skills")
     if client == "kilo":
-        return [home / ".config/kilo/agents", home / ".agents/skills/ai-work-os"]
+        return [home / ".config/kilo/agents", skill_base / "ai-work-os", skill_base / "wayfinder"]
     if client == "opencode":
-        return [home / ".config/opencode/agents", home / ".agents/skills/ai-work-os"]
+        return [home / ".config/opencode/agents", skill_base / "ai-work-os", skill_base / "wayfinder"]
     if client == "pi":
-        return [home / ".agents/skills/ai-work-os", home / ".pi/agent/prompts"]
-    if client == "codex":
-        return [home / ".codex/skills/ai-work-os"]
-    if client == "claude":
-        return [home / ".claude/skills/ai-work-os"]
-    return [home / ".agents/skills/ai-work-os"]
+        return [skill_base / "ai-work-os", skill_base / "wayfinder", home / ".pi/agent/prompts"]
+    return [skill_base / "ai-work-os", skill_base / "wayfinder"]
 
 
 def backup_and_write(path: Path, content: str, stamp: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8") != content:
         shutil.copy2(path, path.with_name(f"{path.name}.backup-{stamp}"))
-    path.write_text(content, encoding="utf-8")
+    path.write_text(content, encoding="utf-8", newline="\n")
 
 
-def render_skill(root: Path) -> str:
+def render_ai_work_os_skill(root: Path) -> str:
     source = root / "skills/ai-work-os/SKILL.md"
     return source.read_text(encoding="utf-8").replace("{{AI_WORK_OS_HOME}}", root.as_posix())
 
 
-def install_skill(root: Path, target: Path, stamp: str) -> None:
-    backup_and_write(target / "SKILL.md", render_skill(root), stamp)
+def install_skills(root: Path, client: str, stamp: str) -> None:
+    home = Path.home()
+    base = home / (f".{client}/skills" if client in {"codex", "claude"} else ".agents/skills")
+    backup_and_write(base / "ai-work-os/SKILL.md", render_ai_work_os_skill(root), stamp)
+
+    wayfinder_source = root / "third_party/mattpocock-wayfinder"
+    for name in ("SKILL.md", "LICENSE", "README.md"):
+        backup_and_write(
+            base / "wayfinder" / name,
+            (wayfinder_source / name).read_text(encoding="utf-8"),
+            stamp,
+        )
 
 
 def install_markdown_agents(root: Path, client: str) -> None:
@@ -145,9 +152,15 @@ Configure or verify all four routes according to `{root / 'core/ROUTING.md'}`. A
 1. Configure model/provider credentials using the client's secure credential flow.
 2. For Business, verify no free endpoints, ZDR/no-training, allowlist and spending cap.
 3. For Light, set the project spending cap and never provide sensitive material to free endpoints.
-4. Reload the client and confirm the installed roles/skill are visible.
+4. Reload the client and confirm the installed roles and both skills are visible.
 5. If GitHub Issues is selected later, approve an official integration and authentication method.
 6. Open a synthetic project and test planning -> handoff -> build without paid calls where possible.
+
+## Bundled third-party component
+
+- Wayfinder by Matt Pocock, revision `84fdeffd12f2ee307994d1eb6feb48173b6e0502`.
+- License: MIT; the copyright notice and license are installed beside the skill.
+- See `{root / 'THIRD_PARTY_NOTICES.md'}` for provenance and attribution.
 
 ## First use
 
@@ -180,16 +193,12 @@ def main() -> int:
     if args.apply:
         if client in {"kilo", "opencode"}:
             install_markdown_agents(root, client)
-            install_skill(root, Path.home() / ".agents/skills/ai-work-os", stamp)
+            install_skills(root, client, stamp)
         elif client == "pi":
-            install_skill(root, Path.home() / ".agents/skills/ai-work-os", stamp)
+            install_skills(root, client, stamp)
             install_pi_prompts(root, stamp)
-        elif client == "codex":
-            install_skill(root, Path.home() / ".codex/skills/ai-work-os", stamp)
-        elif client == "claude":
-            install_skill(root, Path.home() / ".claude/skills/ai-work-os", stamp)
         else:
-            install_skill(root, Path.home() / ".agents/skills/ai-work-os", stamp)
+            install_skills(root, client, stamp)
 
     report = build_report(root, client, detected, args.apply)
     if args.apply:
@@ -201,6 +210,12 @@ def main() -> int:
             "client": client,
             "root": str(root),
             "report": str(report_path),
+            "thirdParty": {
+                "wayfinder": {
+                    "revision": "84fdeffd12f2ee307994d1eb6feb48173b6e0502",
+                    "license": "MIT",
+                }
+            },
         }
         (report_path.parent / "install.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
         print(f"Report: {report_path}")

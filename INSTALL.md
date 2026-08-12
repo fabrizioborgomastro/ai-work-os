@@ -55,14 +55,16 @@ Il client leggerà `AGENTS.md`, identificherà il proprio adapter e avvierà `sc
 
 | Client | Installazione automatica |
 |---|---|
-| Kilo | sette agenti Markdown globali + skill portabile |
-| OpenCode | sette agenti Markdown globali + skill portabile |
-| Pi | skill portabile + sette prompt di ruolo |
-| Codex | skill personale AI Work OS |
-| Claude Code | skill personale AI Work OS |
-| altro | skill Agent Skills standard e report di porting |
+| Kilo | sette agenti Markdown globali + skill AI Work OS + Wayfinder |
+| OpenCode | sette agenti Markdown globali + skill AI Work OS + Wayfinder |
+| Pi | skill AI Work OS + Wayfinder + sette prompt di ruolo |
+| Codex | skill personali AI Work OS e Wayfinder |
+| Claude Code | skill personali AI Work OS e Wayfinder |
+| altro | skill Agent Skills standard AI Work OS e Wayfinder + report di porting |
 
 Il bootstrap non installa provider, non inserisce credenziali e non effettua chiamate ai modelli.
+La copia Wayfinder installata conserva separatamente la licenza MIT originale;
+consultare `THIRD_PARTY_NOTICES.md`.
 
 ## Passaggi che restano intenzionalmente manuali
 
