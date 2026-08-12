@@ -1,5 +1,63 @@
 # AI Work OS roadmap
 
+## Installazione interattiva guidata
+
+**Stato:** pianificato, non ancora implementato.
+
+### Problema
+
+L'installazione corrente e sicura e analizza separatamente host, runtime,
+adapter e routing, ma l'utente deve ancora conoscere parametri come `-Host`,
+`-Target` e le accettazioni di compatibilita. Una richiesta generica fatta a
+un'estensione agentica potrebbe inoltre non comunicare chiaramente
+all'installer quale runtime sta eseguendo l'operazione.
+
+### Obiettivo
+
+Offrire una procedura guidata che rilevi il contesto, chieda soltanto le scelte
+ambigue e costruisca un piano comprensibile prima di qualsiasi scrittura.
+
+Comandi previsti:
+
+```powershell
+.\install.ps1 -Interactive
+```
+
+```sh
+./install.sh --interactive
+```
+
+### Esperienza prevista
+
+1. mostrare host/editor rilevato e chiederne conferma;
+2. elencare i runtime agentici rilevati senza confondere host ed estensioni;
+3. chiedere il runtime target se non e univoco;
+4. mostrare compatibilita workflow e routing separatamente;
+5. spiegare cosa manca senza router: combo, fallback e panel multiprovider;
+6. proporre OmniRoute, un router equivalente, una mappatura manuale oppure
+   l'installazione del solo workflow;
+7. elencare tutti i percorsi che verranno modificati e i client che non
+   verranno toccati;
+8. richiedere conferma prima dell'installazione e un consenso distinto prima
+   di installare o configurare componenti esterni.
+
+La modalita interattiva deve riutilizzare lo stesso preflight degli installer
+non interattivi: non deve introdurre una seconda logica di compatibilita.
+
+### Criteri di completamento
+
+- funziona con PowerShell su Windows e shell POSIX su macOS/Linux;
+- gestisce almeno Kilo dentro Antigravity, OpenCode dentro VS Code e Claude
+  Code dentro Cursor;
+- in caso di piu runtime non sceglie automaticamente;
+- un client sconosciuto resta bloccato finche destinazione e capacita non sono
+  state verificate;
+- la scelta "solo workflow" dichiara esplicitamente l'assenza del routing;
+- nessun router, provider, plugin, MCP o credenziale viene installato senza un
+  consenso separato;
+- i test dimostrano che vengono modificati soltanto il runtime scelto e lo
+  stato `~/.ai-work-os/`.
+
 ## Separazione rigida tra routing Business e Light
 
 **Stato:** pianificato, non ancora implementato.
