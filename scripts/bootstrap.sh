@@ -81,6 +81,23 @@ else
     verified_at="" evidence="UNKNOWN: runtime non presente nel catalogo locale"
 fi
 
+case "$routing" in
+    native-combo)
+        routing_status="CAPABLE - configuration not verified"
+        combo_status="Available only after the runtime combos and providers are configured and tested"
+        routing_action="Verify the four routes in core/ROUTING.md; the installer does not create provider or combo configuration" ;;
+    external-manual)
+        routing_status="NOT CONFIGURED"
+        combo_status="Unavailable until a compatible routing layer is configured"
+        routing_action="Configure OmniRoute, an equivalent external router, or a supported manual runtime mapping" ;;
+    unsupported)
+        routing_status="UNSUPPORTED" combo_status="Unavailable"
+        routing_action="Use a runtime or router that can implement the four logical routes" ;;
+    *)
+        routing_status="UNKNOWN" combo_status="Not verified"
+        routing_action="Verify routing capabilities before relying on combos, fallbacks or review panels" ;;
+esac
+
 echo ""
 echo "Compatibility preflight"
 echo "Host/editor: $host (informational only)"
@@ -88,6 +105,9 @@ echo "Target runtime: $target"
 echo "Adapter: $adapter"
 echo "Workflow compatibility: $workflow"
 echo "Routing compatibility: $routing"
+echo "Multiprovider routing: $routing_status"
+echo "Combo support: $combo_status"
+echo "Routing action: $routing_action"
 if [ "$verified" -eq 1 ]; then echo "Catalog status: VERIFIED"; else echo "Catalog status: UNVERIFIED"; fi
 echo "Limitation: $limitation"
 echo "Recommendation: $recommendation"
@@ -215,6 +235,8 @@ cat > "$rendered" <<EOF
 - Adapter: \`$adapter\`
 - Workflow compatibility: **$workflow**
 - Routing compatibility: **$routing**
+- Multiprovider routing: **$routing_status**
+- Combo support: **$combo_status**
 - Catalog verification: **$verified**
 - Runtimes detected on PATH: ${detected:-none}
 - Installation scope: only \`$target\`
@@ -228,6 +250,7 @@ $(show_targets)
 
 - No files for other agentic clients or host editors.
 - No provider, credential, plugin, MCP, combo, fallback, privacy control or spending limit.
+- Routing action required: $routing_action.
 - Limitation: $limitation
 - Recommendation: $recommendation
 - Evidence: $evidence${verified_at:+ (verified $verified_at)}

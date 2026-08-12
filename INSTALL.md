@@ -113,6 +113,13 @@ Per un client non catalogato:
 L'installer non consulta Internet. L'audit distingue fatti verificati, inferiti
 e sconosciuti; il catalogo locale si trova in `adapters/compatibility.tsv`.
 
+Quando il workflow e installabile ma il routing e `external-manual`, il
+preflight segnala esplicitamente che combo, fallback e panel multiprovider non
+sono disponibili finche non viene configurato un routing compatibile. Propone
+OmniRoute, un router equivalente oppure una mappatura manuale supportata dal
+runtime. Il suggerimento non autorizza l'installer a installare software,
+provider o credenziali.
+
 Il bootstrap non installa provider, non inserisce credenziali e non effettua chiamate ai modelli.
 La copia Wayfinder installata conserva separatamente la licenza MIT originale;
 consultare `THIRD_PARTY_NOTICES.md`.

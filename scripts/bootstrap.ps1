@@ -162,9 +162,35 @@ function Get-ClientConfigText([string]$SelectedTarget) {
     return (@($candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | ForEach-Object { [System.IO.File]::ReadAllText($_) }) -join "`n")
 }
 
+function Get-RoutingNotice([string]$RoutingLevel) {
+    switch ($RoutingLevel) {
+        "native-combo" {
+            return [ordered]@{
+                Status = "CAPABLE - configuration not verified"
+                Combo = "Available only after the runtime combos and providers are configured and tested"
+                Action = "Verify the four routes in core/ROUTING.md; the installer does not create provider or combo configuration"
+            }
+        }
+        "external-manual" {
+            return [ordered]@{
+                Status = "NOT CONFIGURED"
+                Combo = "Unavailable until a compatible routing layer is configured"
+                Action = "Configure OmniRoute, an equivalent external router, or a supported manual runtime mapping"
+            }
+        }
+        "unsupported" {
+            return [ordered]@{ Status = "UNSUPPORTED"; Combo = "Unavailable"; Action = "Use a runtime or router that can implement the four logical routes" }
+        }
+        default {
+            return [ordered]@{ Status = "UNKNOWN"; Combo = "Not verified"; Action = "Verify routing capabilities before relying on combos, fallbacks or review panels" }
+        }
+    }
+}
+
 function New-SetupReport([string]$SelectedTarget, [string]$SelectedHost, $Compatibility, [string[]]$Detected, [bool]$Verified) {
     $workflow = if ($Compatibility) { $Compatibility.workflowLevel } else { $WorkflowCapability }
     $routing = if ($Compatibility) { $Compatibility.routingLevel } else { $RoutingCapability }
+    $routingNotice = Get-RoutingNotice $routing
     $adapter = if ($Compatibility) { $Compatibility.adapter } else { "generic-explicit" }
     $limitation = if ($Compatibility) { $Compatibility.limitation } else { "Capacita dichiarate dall'utente e non verificate dal catalogo." }
     $recommendation = if ($Compatibility) { $Compatibility.recommendation } else { "Verificare la documentazione ufficiale del runtime prima dell'uso reale." }
@@ -183,6 +209,8 @@ function New-SetupReport([string]$SelectedTarget, [string]$SelectedHost, $Compat
 - Adapter: ``$adapter``
 - Workflow compatibility: **$workflow**
 - Routing compatibility: **$routing**
+- Multiprovider routing: **$($routingNotice.Status)**
+- Combo support: **$($routingNotice.Combo)**
 - Catalog verification: **$Verified**
 - Runtimes detected on PATH: $detectedText
 - Installation scope: only ``$SelectedTarget``
@@ -196,6 +224,7 @@ $targetsText
 
 - No files for other agentic clients or host editors.
 - No provider, credential, plugin, MCP, combo, fallback, privacy control or spending limit.
+- Routing action required: $($routingNotice.Action).
 - Limitation: $limitation
 - Recommendation: $recommendation
 - Evidence: $evidence
@@ -246,6 +275,10 @@ Write-Host "Target runtime: $selectedTarget"
 Write-Host "Adapter: $adapter"
 Write-Host "Workflow compatibility: $workflow"
 Write-Host "Routing compatibility: $routing"
+$routingNotice = Get-RoutingNotice $routing
+Write-Host "Multiprovider routing: $($routingNotice.Status)"
+Write-Host "Combo support: $($routingNotice.Combo)"
+Write-Host "Routing action: $($routingNotice.Action)"
 Write-Host "Catalog status: $(if ($verified) { 'VERIFIED' } else { 'UNVERIFIED' })"
 Write-Host "Limitation: $limitation"
 Write-Host "Recommendation: $recommendation"

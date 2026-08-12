@@ -15,6 +15,10 @@ if printf '%s\n' "$cursor_claude" | grep -q '/.config/kilo'; then echo "Cursor/C
 antigravity_kilo=$(HOME="$test_home" sh "$bootstrap" --target kilo --host antigravity --analyze)
 printf '%s\n' "$antigravity_kilo" | grep -q 'Routing compatibility: native-combo'
 
+vscode_opencode=$(HOME="$test_home" sh "$bootstrap" --target opencode --host vscode --analyze)
+printf '%s\n' "$vscode_opencode" | grep -q 'Multiprovider routing: NOT CONFIGURED'
+printf '%s\n' "$vscode_opencode" | grep -q 'OmniRoute'
+
 unknown=$(HOME="$test_home" sh "$bootstrap" --target unknown-test-runtime --analyze)
 printf '%s\n' "$unknown" | grep -q 'Catalog status: UNVERIFIED'
 printf '%s\n' "$unknown" | grep -q 'BLOCKED until an explicit skill destination'
@@ -28,4 +32,4 @@ fi
 [ ! -e "$test_home/.ai-work-os" ] || { echo "Blocked tests wrote installation state" >&2; exit 1; }
 
 echo "Compatibility tests: OK"
-echo "Cases: Cursor/Claude, Antigravity/Kilo, unknown runtime, acknowledgement gates"
+echo "Cases: Cursor/Claude, VS Code/OpenCode, Antigravity/Kilo, unknown runtime, acknowledgement gates"

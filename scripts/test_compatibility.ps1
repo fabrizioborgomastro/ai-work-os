@@ -23,6 +23,11 @@ if ($antigravityKilo -notmatch "Host/editor: antigravity" -or $antigravityKilo -
     $errors.Add("Antigravity -> Kilo classification mismatch")
 }
 
+$vscodeOpenCode = Capture-Analysis @{ Target = "opencode"; HostApp = "vscode" }
+if ($vscodeOpenCode -notmatch "Multiprovider routing: NOT CONFIGURED" -or $vscodeOpenCode -notmatch "OmniRoute") {
+    $errors.Add("VS Code -> OpenCode did not explain the routing requirement and OmniRoute option")
+}
+
 $unknown = Capture-Analysis @{ Target = "unknown-test-runtime" }
 if ($unknown -notmatch "Catalog status: UNVERIFIED" -or $unknown -notmatch "BLOCKED until an explicit skill destination") {
     $errors.Add("Unknown runtime audit did not block the implicit destination")
@@ -48,4 +53,4 @@ if ($errors.Count) {
     exit 1
 }
 Write-Host "Compatibility tests: OK" -ForegroundColor Green
-Write-Host "Cases: Cursor/Claude, Antigravity/Kilo, unknown runtime, acknowledgement gates"
+Write-Host "Cases: Cursor/Claude, VS Code/OpenCode, Antigravity/Kilo, unknown runtime, acknowledgement gates"
