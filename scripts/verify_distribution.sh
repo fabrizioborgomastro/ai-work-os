@@ -51,6 +51,11 @@ adapter_count=$(find "$root/adapters/markdown-agents/agents" -maxdepth 1 -type f
 [ "$core_count" -eq 7 ] || { echo "core agent count mismatch: $core_count" >&2; errors=1; }
 [ "$adapter_count" -eq 8 ] || { echo "adapter agent count mismatch: $adapter_count" >&2; errors=1; }
 grep -q '^mode: primary$' "$root/adapters/markdown-agents/agents/ai-work-os.md" || { echo "dispatcher is not primary" >&2; errors=1; }
+if grep -Eq '^[[:space:]]*(edit|bash):[[:space:]]*deny$' "$root/adapters/markdown-agents/agents/ai-work-os.md"; then
+    echo "dispatcher blocks a capability required by delegated roles" >&2
+    errors=1
+fi
+grep -A2 '^[[:space:]]*task:$' "$root/adapters/markdown-agents/agents/ai-work-os.md" | grep -q '"\*": deny' || { echo "dispatcher task allowlist has no default deny" >&2; errors=1; }
 for name in business-wayfinder business-engineer light-planner light-builder; do
     grep -q '^mode: subagent$' "$root/adapters/markdown-agents/agents/$name.md" || { echo "internal role is visible as primary: $name" >&2; errors=1; }
 done

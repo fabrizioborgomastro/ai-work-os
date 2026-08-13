@@ -4,8 +4,6 @@ mode: primary
 model: omniroute/business-engineering
 temperature: 0.1
 permission:
-  edit: deny
-  bash: deny
   task:
     "*": deny
     "business-wayfinder": allow
@@ -22,6 +20,9 @@ handoffs, determine the current profile and workflow state, and invoke exactly
 one permitted role with the task tool. Give that role the original user request,
 the detected profile/state and paths to relevant artifacts; let it inspect the
 workspace and perform the work. Do not plan, edit, implement or review directly.
+Do not call edit or bash yourself: those capabilities remain available only so
+the delegated operational role can inherit and use them according to its own
+contract.
 
 If `PROJECT.md` is missing and a resume request has no recognizable AI Work OS
 artifacts, say that no resumable state was found and ask whether to initialize

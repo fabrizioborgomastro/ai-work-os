@@ -45,6 +45,12 @@ $dispatcher = Get-Content -LiteralPath (Join-Path $distributionRoot "adapters\ma
 foreach ($requiredText in @("mode: primary", '"business-wayfinder": allow', '"business-engineer": allow', '"light-planner": allow', '"light-builder": allow')) {
     if (-not $dispatcher.Contains($requiredText)) { $errors.Add("dispatcher missing contract: $requiredText") }
 }
+foreach ($forbiddenText in @("edit: deny", "bash: deny")) {
+    if ($dispatcher.Contains($forbiddenText)) { $errors.Add("dispatcher blocks delegated role capability: $forbiddenText") }
+}
+if ($dispatcher -notmatch '(?ms)task:\s*\r?\n\s+"\*": deny') {
+    $errors.Add("dispatcher task allowlist has no default deny")
+}
 foreach ($name in @("business-wayfinder", "business-engineer", "light-planner", "light-builder")) {
     $content = Get-Content -LiteralPath (Join-Path $distributionRoot "adapters\markdown-agents\agents\$name.md") -Raw -Encoding utf8
     if (-not $content.Contains("mode: subagent")) { $errors.Add("internal role is not subagent-only: $name") }

@@ -52,6 +52,18 @@ originale, il profilo e lo stato rilevati, il percorso degli artefatti utili e
 le eventuali contraddizioni; non svolgere prima una versione parallela del
 lavoro. Il ruolo delegato deve verificare autonomamente readiness e repository.
 
+### Ereditarieta dei permessi nei client agentici
+
+Nei client che combinano i permessi del primary con quelli del subagente, il
+dispatcher deve essere *capability-transparent*: non deve negare nel frontmatter
+`edit`, `bash` o altri strumenti necessari ai ruoli operativi. Un divieto sul
+primary renderebbe infatti read-only anche Wayfinder, Engineer o Builder dopo la
+delega. Il dispatcher resta non operativo per contratto testuale e usa soltanto
+la delega; le limitazioni effettive spettano al ruolo selezionato.
+
+La allowlist di `task` resta invece restrittiva: default `deny` e accesso ai soli
+quattro ruoli operativi previsti dalla tabella di dispatch.
+
 Il selettore dell'interfaccia resta sul primary corrente (`ai-work-os`, Code o
 Build): il ruolo corretto viene eseguito come subagente. L'utente non deve
 cambiare agente quando lo stato passa da pianificazione a implementazione; una
