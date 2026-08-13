@@ -1,6 +1,6 @@
 ---
 description: Business decision mapper. Uses Wayfinder to chart complex work and never implements the destination.
-mode: all
+mode: subagent
 model: omniroute/business-engineering
 temperature: 0.1
 ---

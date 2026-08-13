@@ -1,6 +1,6 @@
 ---
 description: Low-cost implementation agent for non-sensitive prototypes and small projects, with an inexpensive paid fallback.
-mode: all
+mode: subagent
 model: omniroute/light-engineering
 temperature: 0.2
 permission:

@@ -15,8 +15,9 @@ Lo script copia gli agenti nella configurazione globale e sostituisce il riferim
 Per l'uso ordinario selezionare nel picker l'agente `ai-work-os`, non il
 built-in `Code`, quindi scrivere `riprendi`. Il dispatcher resta l'agente
 principale visibile e delega a Wayfinder, Engineer, Planner o Builder in base a
-`PROJECT.md` e agli handoff. I ruoli specifici rimangono selezionabili per
-interventi manuali e diagnostica.
+`PROJECT.md` e agli handoff. I ruoli specifici sono `subagent`: non compaiono
+nel picker principale, ma restano invocabili dal dispatcher o tramite menzione
+esplicita quando serve diagnostica.
 
 Se la sessione parte sul built-in `Code`, il messaggio `riprendi` e anche un
 trigger esplicito della skill AI Work OS installata: Code deve leggere lo stato

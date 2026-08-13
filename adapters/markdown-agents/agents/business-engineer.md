@@ -1,6 +1,6 @@
 ---
 description: Primary Business software engineer for mature specifications, implementation, verification and gated independent review.
-mode: all
+mode: subagent
 model: omniroute/business-engineering
 temperature: 0.2
 permission:

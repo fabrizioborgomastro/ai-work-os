@@ -47,7 +47,7 @@ foreach ($requiredText in @("mode: primary", '"business-wayfinder": allow', '"bu
 }
 foreach ($name in @("business-wayfinder", "business-engineer", "light-planner", "light-builder")) {
     $content = Get-Content -LiteralPath (Join-Path $distributionRoot "adapters\markdown-agents\agents\$name.md") -Raw -Encoding utf8
-    if (-not $content.Contains("mode: all")) { $errors.Add("dispatchable role is not mode all: $name") }
+    if (-not $content.Contains("mode: subagent")) { $errors.Add("internal role is not subagent-only: $name") }
 }
 
 $skillText = Get-Content -LiteralPath (Join-Path $distributionRoot "skills\ai-work-os\SKILL.md") -Raw -Encoding utf8

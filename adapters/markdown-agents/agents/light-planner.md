@@ -1,6 +1,6 @@
 ---
 description: Cost-aware planner for small, non-sensitive projects; invokes Wayfinder only when the work truly exceeds one session.
-mode: all
+mode: subagent
 model: omniroute/light-engineering
 temperature: 0.2
 ---

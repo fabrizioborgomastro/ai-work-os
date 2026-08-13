@@ -52,7 +52,7 @@ adapter_count=$(find "$root/adapters/markdown-agents/agents" -maxdepth 1 -type f
 [ "$adapter_count" -eq 8 ] || { echo "adapter agent count mismatch: $adapter_count" >&2; errors=1; }
 grep -q '^mode: primary$' "$root/adapters/markdown-agents/agents/ai-work-os.md" || { echo "dispatcher is not primary" >&2; errors=1; }
 for name in business-wayfinder business-engineer light-planner light-builder; do
-    grep -q '^mode: all$' "$root/adapters/markdown-agents/agents/$name.md" || { echo "role is not dispatchable: $name" >&2; errors=1; }
+    grep -q '^mode: subagent$' "$root/adapters/markdown-agents/agents/$name.md" || { echo "internal role is visible as primary: $name" >&2; errors=1; }
 done
 grep -q '^description: .*riprendi.*Code/Build' "$root/skills/ai-work-os/SKILL.md" || { echo "skill resume trigger missing" >&2; errors=1; }
 grep -q 'apply the same dispatch table' "$root/skills/ai-work-os/SKILL.md" || { echo "skill generic dispatch missing" >&2; errors=1; }

@@ -7,6 +7,7 @@ considerato canonico.
 
 Nel flusso ordinario l'utente seleziona `ai-work-os` e scrive `riprendi`. Il
 dispatcher segue `core/DISPATCH.md` e richiama il ruolo corretto come subagente.
+Solo il dispatcher e visibile come primary; i sette ruoli restano interni.
 
 I file conservano riferimenti relativi al core per restare distribuibili. Gli
 installer nativi li rendono assoluti al momento dell'installazione globale.

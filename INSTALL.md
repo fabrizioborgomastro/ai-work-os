@@ -135,10 +135,10 @@ riprendi
 
 Il dispatcher legge `PROJECT.md`, tracker e handoff e invoca il ruolo Business
 o Light corretto. Il selettore resta visivamente su `ai-work-os`: il ruolo
-specializzato viene eseguito come subagente. Gli agenti specifici restano nel
-selettore per uso manuale e diagnostica, ma nel flusso normale non serve
-sceglierli. Il routing configurato deve riconoscere i modelli logici usati dal
-dispatcher e dai ruoli.
+specializzato viene eseguito come subagente. I ruoli operativi sono interni e
+non compaiono nel selettore principale, evitando che l'utente debba sceglierli.
+Il routing configurato deve riconoscere i modelli logici usati dal dispatcher e
+dai ruoli.
 
 Se una nuova sessione si apre sul built-in `Code` o `Build`, la skill AI Work OS
 installata riconosce `riprendi` come trigger e applica lo stesso dispatch verso
