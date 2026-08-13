@@ -265,7 +265,7 @@ $(show_targets)
 
 ## First use
 
-$(if [ "$target" = kilo ] || [ "$target" = opencode ]; then printf 'Select the `ai-work-os` agent in the runtime, open the real project directory and type `riprendi`. Keep the dispatcher selected; it invokes the specialized role from persisted project state.'; else printf 'Open the real project directory, activate the AI Work OS skill and type `riprendi`. The skill selects the role from persisted project state using the capabilities available in this runtime.'; fi)
+$(if [ "$target" = kilo ] || [ "$target" = opencode ]; then printf 'Close any chat opened before this install/update: existing sessions retain their original permissions. Create a new session, select the `ai-work-os` agent, open the real project directory and type `riprendi`. Keep the dispatcher selected; it invokes the specialized role from persisted project state.'; else printf 'Open the real project directory, activate the AI Work OS skill and type `riprendi`. The skill selects the role from persisted project state using the capabilities available in this runtime.'; fi)
 
 Configure credentials through the runtime's secure flow. Verify privacy, provider and budget policies before sending real project data.
 EOF
@@ -298,5 +298,5 @@ EOF
 echo "Installation complete."
 echo "Manager: $state/manage.sh"
 if [ "$target" = kilo ] || [ "$target" = opencode ]; then
-    echo "Next: select the ai-work-os agent in $target, open the real project and type 'riprendi'."
+    echo "Next: close chats opened before this install/update, create a new session, select ai-work-os and type 'riprendi'."
 fi

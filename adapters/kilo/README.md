@@ -24,6 +24,10 @@ trigger esplicito della skill AI Work OS installata: Code deve leggere lo stato
 e delegare al ruolo corretto. Il picker puo continuare a mostrare `Code`, perche
 Kilo esegue il ruolo come subagente e non cambia il primary a meta sessione.
 
+Dopo ogni installazione o aggiornamento creare una chat nuova. Una chat gia
+aperta conserva la sessione subagente e i permessi originari anche dopo il
+riavvio dell'editor; riaprire quella chat non ricarica la configurazione agente.
+
 Il bootstrap completo installa le skill in `~/.kilo/skills/`, non nella
 directory interoperabile condivisa `~/.agents/skills/`.
 

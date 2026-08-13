@@ -140,6 +140,11 @@ non compaiono nel selettore principale, evitando che l'utente debba sceglierli.
 Il routing configurato deve riconoscere i modelli logici usati dal dispatcher e
 dai ruoli.
 
+Dopo un'installazione o un aggiornamento chiudere le chat gia aperte e crearne
+una nuova. Kilo e OpenCode conservano nella sessione i permessi con cui il
+subagente e stato creato: riavviare soltanto l'editor e poi riaprire la stessa
+chat non applica i nuovi permessi a quel subagente.
+
 Se una nuova sessione si apre sul built-in `Code` o `Build`, la skill AI Work OS
 installata riconosce `riprendi` come trigger e applica lo stesso dispatch verso
 il ruolo specializzato. Il nome nel selettore puo restare `Code`/`Build`: viene
