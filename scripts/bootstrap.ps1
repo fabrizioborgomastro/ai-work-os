@@ -243,6 +243,10 @@ This textual check is not proof that routes or providers work. A route may live 
 - ``& \"$HOME\.ai-work-os\manage.ps1\" -Update -DryRun``
 - ``& \"$HOME\.ai-work-os\manage.ps1\" -Uninstall -DryRun``
 
+## First use
+
+$(if ($SelectedTarget -in @("kilo", "opencode")) { "Select the ``ai-work-os`` agent in the runtime, open the real project directory and type ``riprendi``. Keep the dispatcher selected; it invokes the specialized role from persisted project state." } else { "Open the real project directory, activate the AI Work OS skill and type ``riprendi``. The skill selects the role from persisted project state using the capabilities available in this runtime." })
+
 Configure credentials through the runtime's secure flow. Verify privacy, provider and budget policies before sending real project data.
 "@
 }
@@ -351,3 +355,6 @@ $metadata = [ordered]@{
 }
 Write-Utf8NoBom (Join-Path $HOME ".ai-work-os\install.json") ($metadata | ConvertTo-Json -Depth 4)
 Write-Host "Report: $reportPath"
+if ($selectedTarget -in @("kilo", "opencode")) {
+    Write-Host "Next: select the ai-work-os agent in $selectedTarget, open the real project and type 'riprendi'." -ForegroundColor Green
+}

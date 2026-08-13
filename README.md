@@ -52,7 +52,13 @@ Condividere l'intera cartella `AI-Work-OS`. Non contiene credenziali, database, 
 2. Scrivere: `Installa AI Work OS nel client corrente seguendo AGENTS.md`.
 3. Seguire i soli passaggi manuali indicati nel report generato.
 4. Aprire la cartella del progetto reale nel client.
-5. Per un nuovo Business avviare o attivare tramite la skill `business-wayfinder`; per un nuovo Light usare `light-planner`.
+5. In Kilo/OpenCode selezionare `ai-work-os`; negli altri client attivare la
+   skill AI Work OS. Descrivere il nuovo progetto oppure scrivere `riprendi`.
+
+Su Kilo e OpenCode, dopo l'installazione, usare normalmente l'agente
+`ai-work-os`: in una nuova sessione basta scrivere `riprendi`. Il dispatcher
+ricostruisce profilo e stato dagli artefatti del progetto e delega al ruolo
+corretto senza richiedere all'utente di ricordarlo.
 
 Gli agenti inizializzano automaticamente `PROJECT.md`, chiedono il tracker e preparano gli handoff. L'utente deve descrivere l'obiettivo, non ricordare prompt di bootstrap.
 

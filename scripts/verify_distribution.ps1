@@ -9,17 +9,18 @@ $required = @(
     "third_party/mattpocock-wayfinder/SKILL.md", "third_party/mattpocock-wayfinder/LICENSE",
     "third_party/mattpocock-wayfinder/README.md", "core/WORKFLOW.md", "core/TRACKERS.md",
     "core/ROUTING.md", "core/GATES.md", "core/BUDGETS.md", "core/PORTABILITY.md",
-    "core/COMPATIBILITY.md", "adapters/compatibility.tsv",
+    "core/COMPATIBILITY.md", "core/DISPATCH.md", "adapters/compatibility.tsv",
     "templates/PROJECT.example.md", "templates/EVIDENCE_PACKAGE.md", "adapters/README.md",
     "adapters/codex/README.md", "adapters/claude/README.md", "adapters/omniroute/combos.json",
     "skills/ai-work-os/SKILL.md", "scripts/bootstrap.ps1", "scripts/bootstrap.sh",
     "scripts/manage.ps1", "scripts/manage.sh", "scripts/verify_distribution.ps1",
     "scripts/verify_distribution.sh", "scripts/test_compatibility.ps1", "scripts/test_compatibility.sh"
 )
-$expectedAgents = @(
+$expectedCoreAgents = @(
     "business-wayfinder", "business-engineer", "business-architect", "business-reviewer",
     "light-planner", "light-builder", "light-reviewer"
 )
+$expectedAdapterAgents = @($expectedCoreAgents + "ai-work-os")
 $errors = [System.Collections.Generic.List[string]]::new()
 
 foreach ($relative in $required) {
@@ -35,9 +36,27 @@ foreach ($name in @("PROJECT.md", ".ai-work-os", ".kilo", ".wayfinder", "node_mo
 
 $coreAgents = @(Get-ChildItem -LiteralPath (Join-Path $distributionRoot "core\agents") -Filter "*.md" -File | ForEach-Object BaseName | Sort-Object)
 $adapterAgents = @(Get-ChildItem -LiteralPath (Join-Path $distributionRoot "adapters\markdown-agents\agents") -Filter "*.md" -File | ForEach-Object BaseName | Sort-Object)
-$expectedSorted = @($expectedAgents | Sort-Object)
-if (($coreAgents -join "|") -ne ($expectedSorted -join "|")) { $errors.Add("core agent set mismatch") }
-if (($adapterAgents -join "|") -ne ($expectedSorted -join "|")) { $errors.Add("Markdown adapter agent set mismatch") }
+$expectedCoreSorted = @($expectedCoreAgents | Sort-Object)
+$expectedAdapterSorted = @($expectedAdapterAgents | Sort-Object)
+if (($coreAgents -join "|") -ne ($expectedCoreSorted -join "|")) { $errors.Add("core agent set mismatch") }
+if (($adapterAgents -join "|") -ne ($expectedAdapterSorted -join "|")) { $errors.Add("Markdown adapter agent set mismatch") }
+
+$dispatcher = Get-Content -LiteralPath (Join-Path $distributionRoot "adapters\markdown-agents\agents\ai-work-os.md") -Raw -Encoding utf8
+foreach ($requiredText in @("mode: primary", '"business-wayfinder": allow', '"business-engineer": allow', '"light-planner": allow', '"light-builder": allow')) {
+    if (-not $dispatcher.Contains($requiredText)) { $errors.Add("dispatcher missing contract: $requiredText") }
+}
+foreach ($name in @("business-wayfinder", "business-engineer", "light-planner", "light-builder")) {
+    $content = Get-Content -LiteralPath (Join-Path $distributionRoot "adapters\markdown-agents\agents\$name.md") -Raw -Encoding utf8
+    if (-not $content.Contains("mode: all")) { $errors.Add("dispatchable role is not mode all: $name") }
+}
+
+$skillText = Get-Content -LiteralPath (Join-Path $distributionRoot "skills\ai-work-os\SKILL.md") -Raw -Encoding utf8
+if ($skillText -notmatch '(?m)^name: ai-work-os$' -or $skillText -notmatch '(?m)^description: .*riprendi.*Code/Build') {
+    $errors.Add("AI Work OS skill does not expose the universal resume trigger")
+}
+if ($skillText -notmatch 'apply the same dispatch table' -or $skillText -notmatch 'invoke the selected specialized role') {
+    $errors.Add("AI Work OS skill does not define generic-agent dispatch")
+}
 
 $routing = Get-Content -LiteralPath (Join-Path $distributionRoot "adapters\omniroute\combos.json") -Raw -Encoding utf8 | ConvertFrom-Json
 $routes = @($routing.combos.PSObject.Properties.Name | Sort-Object)
@@ -77,5 +96,6 @@ if ($errors.Count) {
 }
 Write-Host "AI Work OS distribution: OK" -ForegroundColor Green
 Write-Host "Root: $distributionRoot"
-Write-Host "Agents: $($expectedAgents.Count)"
+Write-Host "Core roles: $($expectedCoreAgents.Count)"
+Write-Host "Markdown agents: $($expectedAdapterAgents.Count)"
 Write-Host "Routes: $($expectedRoutes.Count)"

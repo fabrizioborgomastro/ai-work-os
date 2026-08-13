@@ -263,6 +263,10 @@ $(show_targets)
 - \`$state/manage.sh update --dry-run\`
 - \`$state/manage.sh uninstall --dry-run\`
 
+## First use
+
+$(if [ "$target" = kilo ] || [ "$target" = opencode ]; then printf 'Select the `ai-work-os` agent in the runtime, open the real project directory and type `riprendi`. Keep the dispatcher selected; it invokes the specialized role from persisted project state.'; else printf 'Open the real project directory, activate the AI Work OS skill and type `riprendi`. The skill selects the role from persisted project state using the capabilities available in this runtime.'; fi)
+
 Configure credentials through the runtime's secure flow. Verify privacy, provider and budget policies before sending real project data.
 EOF
 install_file "$rendered" "$state/SETUP-REPORT.md"
@@ -293,3 +297,6 @@ cat > "$state/install.json" <<EOF
 EOF
 echo "Installation complete."
 echo "Manager: $state/manage.sh"
+if [ "$target" = kilo ] || [ "$target" = opencode ]; then
+    echo "Next: select the ai-work-os agent in $target, open the real project and type 'riprendi'."
+fi

@@ -8,7 +8,11 @@ Eseguire dalla root:
 powershell -ExecutionPolicy Bypass -File install.ps1 -Target opencode
 ```
 
-Lo script genera i sette agenti nella directory globale OpenCode a partire dall'adapter Markdown verificato. Dopo l'installazione, adeguare soltanto gli identificatori dei modelli/provider alle quattro route di `core/ROUTING.md`.
+Lo script genera il dispatcher `ai-work-os` e i sette ruoli nella directory
+globale OpenCode a partire dall'adapter Markdown verificato. Selezionare il
+dispatcher e scrivere `riprendi` per far scegliere il ruolo dallo stato del
+progetto. Dopo l'installazione, adeguare soltanto gli identificatori dei
+modelli/provider alle quattro route di `core/ROUTING.md`.
 
 Il bootstrap completo installa le skill in `~/.config/opencode/skills/`, non
 nella directory interoperabile condivisa `~/.agents/skills/`.

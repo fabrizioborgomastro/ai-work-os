@@ -64,8 +64,8 @@ l'installer nativo del sistema operativo.
 
 | Client | Installazione automatica |
 |---|---|
-| Kilo | sette agenti Markdown globali + skill in `~/.kilo/skills/` |
-| OpenCode | sette agenti Markdown globali + skill in `~/.config/opencode/skills/` |
+| Kilo | dispatcher universale + sette ruoli Markdown + skill in `~/.kilo/skills/` |
+| OpenCode | dispatcher universale + sette ruoli Markdown + skill in `~/.config/opencode/skills/` |
 | Pi | skill in `~/.pi/agent/skills/` + sette prompt di ruolo |
 | Codex | skill personali AI Work OS e Wayfinder |
 | Claude Code | skill personali AI Work OS e Wayfinder |
@@ -123,6 +123,29 @@ provider o credenziali.
 Il bootstrap non installa provider, non inserisce credenziali e non effettua chiamate ai modelli.
 La copia Wayfinder installata conserva separatamente la licenza MIT originale;
 consultare `THIRD_PARTY_NOTICES.md`.
+
+### Riprendere senza scegliere ogni volta il ruolo
+
+In Kilo e OpenCode selezionare l'agente principale `ai-work-os` all'inizio di
+una nuova sessione e scrivere semplicemente:
+
+```text
+riprendi
+```
+
+Il dispatcher legge `PROJECT.md`, tracker e handoff e invoca il ruolo Business
+o Light corretto. Il selettore resta visivamente su `ai-work-os`: il ruolo
+specializzato viene eseguito come subagente. Gli agenti specifici restano nel
+selettore per uso manuale e diagnostica, ma nel flusso normale non serve
+sceglierli. Il routing configurato deve riconoscere i modelli logici usati dal
+dispatcher e dai ruoli.
+
+Se una nuova sessione si apre sul built-in `Code` o `Build`, la skill AI Work OS
+installata riconosce `riprendi` come trigger e applica lo stesso dispatch verso
+il ruolo specializzato. Il nome nel selettore puo restare `Code`/`Build`: viene
+delegato il lavoro, non cambiata programmaticamente la UI. Se il client non
+attiva automaticamente la skill, selezionare `ai-work-os` offre l'ingresso
+deterministico.
 
 ## Passaggi che restano intenzionalmente manuali
 

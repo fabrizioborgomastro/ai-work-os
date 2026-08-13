@@ -51,21 +51,27 @@ Aprire nel client la cartella del repository su cui lavorare, non AI Work OS.
 
 ### Nuovo Business
 
-Selezionare `business-wayfinder` e descrivere liberamente il prodotto. Nei
-client che installano solo la skill, chiedere di attivare il ruolo
-`business-wayfinder`. L'agente:
+In Kilo/OpenCode selezionare `ai-work-os` e descrivere liberamente il prodotto;
+nei client che installano solo la skill, chiedere di usare AI Work OS. Il
+dispatcher attiva `business-wayfinder`. Il ruolo:
 
 1. inizializza `PROJECT.md`;
 2. chiede Locale Markdown oppure GitHub Issues;
 3. crea la mappa e lavora sulle decisioni;
 4. produce `READY_FOR_ENGINEERING` quando il percorso è maturo.
 
-Passare quindi a `business-engineer`, che verifica autonomamente l'handoff prima di implementare.
+Quando lo stato diventa `READY_FOR_ENGINEERING`, scrivere `riprendi`: il
+dispatcher attiva `business-engineer`, che verifica autonomamente l'handoff
+prima di implementare.
 
 ### Nuovo Light
 
-Selezionare o attivare tramite la skill `light-planner`; per attività già
-chiare e piccole è possibile iniziare direttamente con `light-builder`.
+Usare lo stesso ingresso `ai-work-os` specificando che il progetto e Light. Il
+dispatcher attiva `light-planner`; per attivita gia chiare e piccole puo
+delegare direttamente a `light-builder` dopo avere verificato profilo e stato.
+
+In ogni nuova sessione mantenere selezionato `ai-work-os` e scrivere
+`riprendi`: non serve ricordare il ruolo corrente.
 
 ## 5. Verifica dell'installazione
 

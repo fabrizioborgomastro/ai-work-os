@@ -9,6 +9,11 @@ Il sistema ha quattro livelli:
 3. **Adapter** — traducono i contratti verso client, router e tracker specifici.
 4. **Routing** — quattro route logiche indipendenti dal router. Cambiare provider non cambia il processo.
 
+Nei client con subagenti, `ai-work-os` e un dispatcher principale stabile:
+legge lo stato persistente secondo `core/DISPATCH.md` e delega a uno dei sette
+ruoli. Il cambio di fase non richiede quindi che l'utente ricordi quale agente
+selezionare in una nuova sessione.
+
 Host/editor e runtime sono due identita diverse. Cursor o Antigravity possono
 ospitare un terminale o un'estensione che esegue Claude, Kilo, OpenCode o altro:
 la destinazione di installazione e sempre il runtime target. I livelli del

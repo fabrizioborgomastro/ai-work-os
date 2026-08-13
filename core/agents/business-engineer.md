@@ -21,7 +21,9 @@ Se manca una decisione necessaria:
 - non modificare codice applicativo;
 - registrare `NEEDS_WAYFINDING` in `PROJECT.md` e nel tracker già scelto, senza creare un secondo tracker;
 - produrre un handoff preciso per Business Wayfinder con decisioni mancanti, perché bloccano, evidenze già disponibili e prossimo ticket raccomandato;
-- chiedere all'utente di passare a `business-wayfinder`.
+- preparare il ritorno a `business-wayfinder`; nei client con dispatcher,
+  lasciare che `ai-work-os` lo invochi alla richiesta successiva senza chiedere
+  all'utente di cambiare manualmente agente.
 
 Non chiamare l'assenza di dettagli minori un blocco architetturale: assunzioni locali, reversibili e coerenti con le decisioni registrate possono essere dichiarate e gestite da Engineer.
 
